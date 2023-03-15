@@ -11,7 +11,9 @@ from kmk.extensions.RGB import RGB, AnimationModes
 from kmk.modules.pmw3360 import PMW3360
 from kmk.modules.split import Split, SplitSide
 from kmk.modules.layers import Layers
-from kmk.modules.rgbkeys import RGBKeys
+from kmk.modules.capsword import CapsWord
+from kmk.modules.oneshot import OneShot
+from kmk.modules.rgbkeys import RGBKeys, Color
 from storage import getmount
 from kmk.modules.modtap import ModTap
 from kmk.modules.tapdance import TapDance
@@ -33,36 +35,15 @@ keyboard.debug_enabled = True
 
 keyboard.modules.append(MouseKeys())
 keyboard.modules.append(ModTap())
-keyboard.modules.append(TapDance())
+
+td = TapDance()
+td.tap_time = 750
+keyboard.modules.append(td)
+keyboard.modules.append(OneShot())
 keyboard.modules.append(Layers())
 
-v = 50
-s = 255
-rgb = RGB(
-  animation_mode=AnimationModes.STATIC_STANDBY,
-  pixel_pin=rgb_pin,
-  num_pixels=rgb_pixels,
-  hue_default=56,
-  sat_default=s,
-  val_default=v,
-  val_limit=v,
-)
-keyboard.extensions.append(rgb)
-keyboard.modules.append(RGBKeys(
-  coord_mapping=[
-      0 ,   1 ,   2 ,   3 ,   4 ,   5 ,                    37 ,  36 ,  35 ,  34 ,  33 ,  32 ,
-     11 ,  10 ,   9 ,   8 ,   7 ,   6 ,                    38 ,  39 ,  40 ,  41 ,  42 ,  43 ,
-     12 ,  13 ,  14 ,  15 ,  16 ,  17 ,                    49 ,  48 ,  47 ,  46 ,  45 ,  44 ,
-     23 ,  22 ,  21 ,  20 ,  19 ,  18 ,                    50 ,  51 ,  52 ,  53 ,  54 ,  55 ,
-                 24 ,  25 ,                                            57 ,  56 ,
-                             26 ,  27 ,                          58 ,
-                               29 ,  28 ,           59 ,        61 ,
-                               30 ,  31 ,                 60 ,
-  ],
-  split_side=side,
-  split_offset=32,
-))
-
+capsWord = CapsWord(timeout=5000)
+keyboard.modules.append(capsWord)
 keyboard.diode_orientation = DiodeOrientation.ROW2COL
 if side == SplitSide.RIGHT:
   keyboard.col_pins = (
@@ -99,8 +80,6 @@ keyboard.coord_mapping = [
                                34,   35,             60,        67,
                                   32,  33,               66,
 ]
-left = (0, 30)
-right = (36, 66)
 
 if side == SplitSide.RIGHT:
   pmw3360 = PMW3360(cs=board.GP21, miso=board.GP20, mosi=board.GP23, sclk=board.GP22, invert_x=True, invert_y=True, flip_xy=True)
@@ -117,114 +96,257 @@ split = Split(
 )
 keyboard.modules.append(split)
 
-_L1_ = KC.RGB(KC.MO(1), hsa=(190, 255, 50))
-_L2_ = KC.RGB(KC.MO(2), hsa=(190, 255, 50))
-_🚫_ = KC.RGB(KC.NO, hsa=(0, 0, 0))
+_L1_ = KC.MO(1)
+_L2_ = KC.MO(2)
+_L3_ = KC.MO(3)
+_🚫_ = KC.NO
 ↓___ = KC.TRNS
-__1_ = KC.RGB(KC.N1, hsa=(15, 255, 50))
-__2_ = KC.RGB(KC.N2, hsa=(15, 255, 50))
-__3_ = KC.RGB(KC.N3, hsa=(15, 255, 50))
-__4_ = KC.RGB(KC.N4, hsa=(15, 255, 50))
-__5_ = KC.RGB(KC.N5, hsa=(15, 255, 50))
-__6_ = KC.RGB(KC.N6, hsa=(15, 255, 50))
-__7_ = KC.RGB(KC.N7, hsa=(15, 255, 50))
-__8_ = KC.RGB(KC.N8, hsa=(15, 255, 50))
-__9_ = KC.RGB(KC.N9, hsa=(15, 255, 50))
-__0_ = KC.RGB(KC.N0, hsa=(15, 255, 50))
-_TAB = KC.RGB(KC.TAB, hsa=(70, 255, 50))
-CTAB = KC.RGB(KC.LCMD(KC.TAB), hsa=(190, 255, 50))
-TTAB = KC.RGB(KC.LCMD(KC.GRV), hsa=(195, 255, 50))
-__A_ = KC.RGB(KC.A, hsa=(30, 255, 50))
-__B_ = KC.RGB(KC.B, hsa=(30, 190, 50))
-__C_ = KC.RGB(KC.C, hsa=(30, 190, 50))
-__D_ = KC.RGB(KC.D, hsa=(30, 255, 50))
-__E_ = KC.RGB(KC.E, hsa=(30, 190, 50))
-__F_ = KC.RGB(KC.F, hsa=(30, 255, 50))
-__G_ = KC.RGB(KC.G, hsa=(30, 190, 50))
-__H_ = KC.RGB(KC.H, hsa=(30, 190, 50))
-__I_ = KC.RGB(KC.I, hsa=(30, 190, 50))
-__J_ = KC.RGB(KC.J, hsa=(30, 255, 50))
-__K_ = KC.RGB(KC.K, hsa=(30, 255, 50))
-__L_ = KC.RGB(KC.L, hsa=(30, 255, 50))
-__M_ = KC.RGB(KC.M, hsa=(30, 190, 50))
-__N_ = KC.RGB(KC.N, hsa=(30, 190, 50))
-__O_ = KC.RGB(KC.O, hsa=(30, 190, 50))
-__P_ = KC.RGB(KC.P, hsa=(30, 190, 50))
-__Q_ = KC.RGB(KC.Q, hsa=(30, 190, 50))
-__S_ = KC.RGB(KC.S, hsa=(30, 255, 50))
-__R_ = KC.RGB(KC.R, hsa=(30, 190, 50))
-__T_ = KC.RGB(KC.T, hsa=(30, 190, 50))
-__U_ = KC.RGB(KC.U, hsa=(30, 190, 50))
-__V_ = KC.RGB(KC.V, hsa=(30, 190, 50))
-__W_ = KC.RGB(KC.W, hsa=(30, 190, 50))
-__X_ = KC.RGB(KC.X, hsa=(30, 190, 50))
-__Y_ = KC.RGB(KC.Y, hsa=(30, 190, 50))
-__Z_ = KC.RGB(KC.Z, hsa=(30, 190, 50))
-LALT = KC.RGB(KC.LALT, hsa=(120, 255, 50))
-RALT = KC.RGB(KC.RALT, hsa=(120, 255, 50))
-SPCE = KC.RGB(KC.SPACE, hsa=(70, 255, 50))
-BKSP = KC.RGB(KC.BSPC, hsa=(0, 255, 50))
-QUOT = KC.RGB(KC.QUOT, hsa=(40, 255, 50))
-SCLN = KC.RGB(KC.SCLN, hsa=(70, 255, 50))
-LSFT = KC.RGB(KC.LSFT, hsa=(120, 255, 50))
-RSFT = KC.RGB(KC.RSFT, hsa=(120, 255, 50))
-RCMD = KC.RGB(KC.RCMD, hsa=(120, 255, 50))
-LCMD = KC.RGB(KC.LCMD, hsa=(120, 255, 50))
-RCTL = KC.RGB(KC.RCTL, hsa=(120, 255, 50))
-LCTL = KC.RGB(KC.LCTL, hsa=(120, 255, 50))
-LCLK = KC.RGB(KC.MB_LMB, hsa=(130, 255, 50))
-CCLK = KC.RGB(KC.LCMD(KC.MB_LMB), hsa=(135, 255, 50))
-RCLK = KC.RGB(KC.MB_RMB, hsa=(130, 255, 50))
-ENTR = KC.RGB(KC.ENT, hsa=(70, 255, 50))
-CENT = KC.RGB(KC.LCMD(KC.ENT), hsa=(70, 255, 50))
-PERD = KC.RGB(KC.DOT, hsa=(40, 255, 50))
-COMA = KC.RGB(KC.COMM, hsa=(40, 255, 50))
-SLSH = KC.RGB(KC.SLSH, hsa=(40, 255, 50))
-__↑_ = KC.RGB(KC.UP, hsa=(150, 255, 50))
-__↓_ = KC.RGB(KC.DOWN, hsa=(150, 255, 50))
-__←_ = KC.RGB(KC.LEFT, hsa=(150, 255, 50))
-__→_ = KC.RGB(KC.RIGHT, hsa=(150, 255, 50))
-PGUP = KC.RGB(KC.PGUP, hsa=(150, 255, 50))
-PGDN = KC.RGB(KC.PGDN, hsa=(150, 255, 50))
-HOME = KC.RGB(KC.HOME, hsa=(150, 255, 50))
-_END = KC.RGB(KC.END, hsa=(150, 255, 50))
-BKWD = KC.RGB(KC.LALT(KC.LEFT), hsa=(150, 255, 50))
-FWWD = KC.RGB(KC.LALT(KC.RIGHT), hsa=(150, 255, 50))
-BKLN = KC.RGB(KC.TD(KC.LCMD(KC.LEFT), KC.HOME), hsa=(150, 125, 50))
-FWLN = KC.RGB(KC.TD(KC.LCMD(KC.RIGHT), KC.END), hsa=(150, 125, 50))
-DLWD = KC.RGB(KC.LALT(KC.BKSP), hsa=(0, 255, 50))
-DLLN = KC.RGB(KC.LCMD(KC.BKSP), hsa=(0, 255, 50))
-_EQL = KC.RGB(KC.EQL, hsa=(40, 255, 50))
-MINS = KC.RGB(KC.MINUS, hsa=(40, 255, 50))
-UNDS = KC.RGB(KC.UNDS, hsa=(40, 255, 50))
-LCBR = KC.RGB(KC.LCBR, hsa=(40, 255, 50))
-RCBR = KC.RGB(KC.RCBR, hsa=(40, 255, 50))
-LPRN = KC.RGB(KC.LPRN, hsa=(40, 255, 50))
-RPRN = KC.RGB(KC.RPRN, hsa=(40, 255, 50))
-LBRC = KC.RGB(KC.LBRC, hsa=(40, 255, 50))
-RBRC = KC.RGB(KC.RBRC, hsa=(40, 255, 50))
-LABK = KC.RGB(KC.RGB(KC.LABK, (90, 90, 50)), hsa=(40, 255, 50))
-RABK = KC.RGB(KC.RABK, hsa=(40, 255, 50))
-BSLS = KC.RGB(KC.BSLS, hsa=(40, 255, 50))
-COPY = KC.RGB(KC.LCMD(KC.C), hsa=(190, 255, 50))
-_CUT = KC.RGB(KC.LCMD(KC.X), hsa=(190, 255, 50))
-PAST = KC.RGB(KC.LCMD(KC.V), hsa=(190, 255, 50))
-UNDO = KC.RGB(KC.LCMD(KC.Z), hsa=(190, 255, 50))
-_ALL = KC.RGB(KC.LCMD(KC.A), hsa=(190, 255, 50))
-SAVE = KC.RGB(KC.LCMD(KC.S), hsa=(190, 255, 50))
-MTSL = KC.RGB(KC.LCMD(KC.D), hsa=(190, 255, 50))
-FIND = KC.RGB(KC.LCMD(KC.F), hsa=(190, 255, 50))
-SKSL = KC.RGB(KC.LCMD(KC.K), hsa=(190, 255, 50))
-CLOS = KC.RGB(KC.LCMD(KC.W), hsa=(0, 255, 50))
-RLOD = KC.RGB(KC.LCMD(KC.R), hsa=(190, 255, 50))
-NTAB = KC.RGB(KC.LCMD(KC.T), hsa=(190, 255, 50))
-TICK = KC.RGB(KC.GRV, hsa=(60, 255, 50))
-ESCP = KC.RGB(KC.ESC, hsa=(0, 255, 50))
-DELT = KC.RGB(KC.DEL, hsa=(0, 255, 50))
-EMOJ = KC.RGB(KC.LCMD(KC.LCTL(KC.SPACE)), hsa=(190, 255, 50))
-_URL = KC.RGB(KC.LCMD(KC.L), hsa=(190, 255, 50))
-LNCH = KC.RGB(KC.LCMD(KC.SPACE), hsa=(190, 255, 50))
-CLPB = KC.RGB(LCMD(LSFT(KC.V)), hsa=(190, 255, 50))
+__1_ = KC.N1
+__2_ = KC.N2
+__3_ = KC.N3
+__4_ = KC.N4
+__5_ = KC.N5
+__6_ = KC.N6
+__7_ = KC.N7
+__8_ = KC.N8
+__9_ = KC.N9
+__0_ = KC.N0
+_TAB = KC.TAB
+CTAB = KC.LCMD(KC.TAB)
+TTAB = KC.LCMD(KC.GRV)
+__A_ = KC.A
+__B_ = KC.B
+__C_ = KC.C
+__D_ = KC.D
+__E_ = KC.E
+__F_ = KC.F
+__G_ = KC.G
+__H_ = KC.H
+__I_ = KC.I
+__J_ = KC.J
+__K_ = KC.K
+__L_ = KC.L
+__M_ = KC.M
+__N_ = KC.N
+__O_ = KC.O
+__P_ = KC.P
+__Q_ = KC.Q
+__S_ = KC.S
+__R_ = KC.R
+__T_ = KC.T
+__U_ = KC.U
+__V_ = KC.V
+__W_ = KC.W
+__X_ = KC.X
+__Y_ = KC.Y
+__Z_ = KC.Z
+LALT = KC.LALT
+RALT = KC.RALT
+SPCE = KC.MT(KC.SPACE, KC.MO(1), tap_time=200)
+BKSP = KC.BSPC
+QUOT = KC.QUOT
+SCLN = KC.SCLN
+LSFT = KC.MT(KC.OS(KC.LSFT, tap_time=None), KC.LSFT)
+RSFT = KC.MT(KC.OS(KC.RSFT, tap_time=None), KC.RSFT)
+RCMD = KC.RCMD
+LCMD = KC.LCMD
+RCTL = KC.RCTL
+LCTL = KC.LCTL
+LCLK = KC.MB_LMB
+CCLK = KC.LCMD(KC.MB_LMB)
+RCLK = KC.MB_RMB
+ENTR = KC.ENT
+CENT = KC.LCMD(KC.ENT)
+PERD = KC.DOT
+COMA = KC.COMM
+SLSH = KC.SLSH
+__↑_ = KC.UP
+__↓_ = KC.DOWN
+__←_ = KC.LEFT
+__→_ = KC.RIGHT
+PGUP = KC.PGUP
+PGDN = KC.PGDN
+HOME = KC.HOME
+_END = KC.END
+BKWD = KC.LALT(KC.LEFT)
+FWWD = KC.LALT(KC.RIGHT)
+BKLN = KC.LCMD(KC.LEFT)
+FWLN = KC.LCMD(KC.RIGHT)
+DLWD = KC.LALT(KC.BKSP)
+DLLN = KC.LCMD(KC.BKSP)
+_EQL = KC.EQL
+MINS = KC.MINUS
+UNDS = KC.UNDS
+LCBR = KC.LCBR
+RCBR = KC.RCBR
+LPRN = KC.LPRN
+RPRN = KC.RPRN
+LBRC = KC.LBRC
+RBRC = KC.RBRC
+LABK = KC.LABK
+RABK = KC.RABK
+BSLS = KC.BSLS
+COPY = KC.LCMD(KC.C)
+_CUT = KC.LCMD(KC.X)
+PAST = KC.LCMD(KC.V)
+UNDO = KC.LCMD(KC.Z)
+_ALL = KC.LCMD(KC.A)
+SAVE = KC.LCMD(KC.S)
+MTSL = KC.LCMD(KC.D)
+FIND = KC.LCMD(KC.F)
+SKSL = KC.LCMD(KC.K)
+CLOS = KC.LCMD(KC.W)
+RLOD = KC.LCMD(KC.R)
+NTAB = KC.LCMD(KC.T)
+TICK = KC.GRV
+ESCP = KC.ESC
+DELT = KC.DEL
+EMOJ = KC.LCMD(KC.LCTL(KC.SPACE))
+_URL = KC.LCMD(KC.L)
+LNCH = KC.LCMD(KC.SPACE)
+CLPB = KC.LCMD(KC.LSFT(KC.V))
+CMNT = KC.LCMD(KC.SLSH)
+PRNT = KC.LCMD(KC.P)
+CMCT = KC.LCMD(KC.LCTL)
+
+rgb = RGB(
+  animation_mode=AnimationModes.STATIC_STANDBY,
+  pixel_pin=rgb_pin,
+  num_pixels=rgb_pixels,
+  hue_default=56,
+  sat_default=255,
+  val_default=0,
+  val_limit=255,
+)
+keyboard.extensions.append(rgb)
+keyboard.modules.append(RGBKeys(
+  coord_mapping=[
+      0 ,   1 ,   2 ,   3 ,   4 ,   5 ,                    37 ,  36 ,  35 ,  34 ,  33 ,  32 ,
+     11 ,  10 ,   9 ,   8 ,   7 ,   6 ,                    38 ,  39 ,  40 ,  41 ,  42 ,  43 ,
+     12 ,  13 ,  14 ,  15 ,  16 ,  17 ,                    49 ,  48 ,  47 ,  46 ,  45 ,  44 ,
+     23 ,  22 ,  21 ,  20 ,  19 ,  18 ,                    50 ,  51 ,  52 ,  53 ,  54 ,  55 ,
+                 24 ,  25 ,                                            57 ,  56 ,
+                             26 ,  27 ,                          58 ,
+                               29 ,  28 ,           59 ,        61 ,
+                               30 ,  31 ,                 60 ,
+  ],
+  key_colors = {
+    _🚫_: Color(v=0),
+    _L1_: Color(h=190),
+    _L2_: Color(h=190),
+    _L3_: Color(h=190),
+    __1_: Color(h=15),
+    __2_: Color(h=15),
+    __3_: Color(h=15),
+    __4_: Color(h=15),
+    __5_: Color(h=15),
+    __6_: Color(h=15),
+    __7_: Color(h=15),
+    __8_: Color(h=15),
+    __9_: Color(h=15),
+    __0_: Color(h=15),
+    _TAB: Color(h=70),
+    CTAB: Color(h=190),
+    TTAB: Color(h=195),
+    __A_: Color(h=30),
+    __B_: Color(h=30, s=200, v=150),
+    __C_: Color(h=30, s=200, v=150),
+    __D_: Color(h=30),
+    __E_: Color(h=30, s=200, v=150),
+    __F_: Color(h=30),
+    __G_: Color(h=30, s=200, v=150),
+    __H_: Color(h=30, s=200, v=150),
+    __I_: Color(h=30, s=200, v=150),
+    __J_: Color(h=30),
+    __K_: Color(h=30),
+    __L_: Color(h=30),
+    __M_: Color(h=30, s=200, v=150),
+    __N_: Color(h=30, s=200, v=150),
+    __O_: Color(h=30, s=200, v=150),
+    __P_: Color(h=30, s=200, v=150),
+    __Q_: Color(h=30, s=200, v=150),
+    __S_: Color(h=30),
+    __R_: Color(h=30, s=200, v=150),
+    __T_: Color(h=30, s=200, v=150),
+    __U_: Color(h=30, s=200, v=150),
+    __V_: Color(h=30, s=200, v=150),
+    __W_: Color(h=30, s=200, v=150),
+    __X_: Color(h=30, s=200, v=150),
+    __Y_: Color(h=30, s=200, v=150),
+    __Z_: Color(h=30, s=200, v=150),
+    LALT: Color(h=120),
+    RALT: Color(h=120),
+    SPCE: Color(h=70),
+    BKSP: Color(h=0),
+    QUOT: Color(h=40),
+    SCLN: Color(h=70),
+    LSFT: Color(h=120),
+    RSFT: Color(h=120),
+    RCMD: Color(h=120),
+    LCMD: Color(h=120),
+    RCTL: Color(h=120),
+    LCTL: Color(h=120),
+    LCLK: Color(h=130),
+    CCLK: Color(h=135),
+    RCLK: Color(h=130),
+    ENTR: Color(h=70),
+    CENT: Color(h=70),
+    PERD: Color(h=40),
+    COMA: Color(h=40),
+    SLSH: Color(h=40),
+    __↑_: Color(h=150),
+    __↓_: Color(h=150),
+    __←_: Color(h=150),
+    __→_: Color(h=150),
+    PGUP: Color(h=150),
+    PGDN: Color(h=150),
+    HOME: Color(h=150),
+    _END: Color(h=150),
+    BKWD: Color(h=150),
+    FWWD: Color(h=150),
+    BKLN: Color(h=150),
+    FWLN: Color(h=150),
+    DLWD: Color(h=0),
+    DLLN: Color(h=0),
+    _EQL: Color(h=40),
+    MINS: Color(h=40),
+    UNDS: Color(h=40),
+    LCBR: Color(h=40),
+    RCBR: Color(h=40),
+    LPRN: Color(h=40),
+    RPRN: Color(h=40),
+    LBRC: Color(h=40),
+    RBRC: Color(h=40),
+    LABK: Color(h=40),
+    RABK: Color(h=40),
+    BSLS: Color(h=40),
+    COPY: Color(h=190),
+    _CUT: Color(h=190),
+    PAST: Color(h=190),
+    UNDO: Color(h=190),
+    _ALL: Color(h=190),
+    SAVE: Color(h=190),
+    MTSL: Color(h=190),
+    FIND: Color(h=190),
+    SKSL: Color(h=190),
+    CLOS: Color(h=0),
+    RLOD: Color(h=190),
+    NTAB: Color(h=190),
+    TICK: Color(h=60),
+    ESCP: Color(h=0),
+    DELT: Color(h=0),
+    EMOJ: Color(h=190),
+    _URL: Color(h=190),
+    LNCH: Color(h=190),
+    CLPB: Color(h=190),
+    CMNT: Color(h=190),
+    PRNT: Color(h=190),
+    CMCT: Color(h=120),
+  },
+  default_color=Color(h=0, s=255, v=255),
+  split_side=side,
+  split_offset=32,
+))
 
 keyboard.keymap = [[
   ESCP, __1_, __2_, __3_, __4_, __5_,                   __6_, __7_, __8_, __9_, __0_, BKSP,
@@ -233,39 +355,38 @@ keyboard.keymap = [[
   LCTL, __Z_, __X_, __C_, __V_, __B_,                   __N_, __M_, COMA, PERD, SLSH, RSFT,
               LALT, LCMD,                                           LCMD, LALT,
                           BKSP, SPCE,                         SPCE,
-                             LCLK, _L1_,          LCLK,       _L1_,
-                                RCLK, _L2_,              RCLK,
+                             LCLK, _L2_,          LCLK,       _L2_,
+                                RCLK, _L3_,              RCLK,
 ], [
-  ↓___, _🚫_, _🚫_, _🚫_, _🚫_, LABK,                   RABK, _🚫_, _🚫_, _🚫_, MINS, DLWD,
-  CTAB, ESCP, CLOS, _🚫_, RLOD, NTAB,                   RCBR, _URL, __↑_, _🚫_, _🚫_, TICK,
+  ↓___, _🚫_, _🚫_, _🚫_, _🚫_, LABK,                   RABK, _🚫_, _🚫_, _🚫_, _🚫_, DLWD,
+  CTAB, ESCP, CLOS, _🚫_, RLOD, NTAB,                   RCBR, _URL, __↑_, _🚫_, PRNT, TICK,
   ↓___, _ALL, SAVE, MTSL, FIND, LPRN,                   RPRN, __←_, SKSL, __→_, _🚫_, CENT,
   ↓___, UNDO, _CUT, COPY, PAST, LBRC,                   RBRC, MINS, _EQL, UNDS, BSLS, ↓___,
               ↓___, ↓___,                                           ↓___, ↓___,
-                          DLWD, ↓___,                         __↓_,
+                          DELT, ENTR,                         __↓_,
                              LSFT, ↓___,          ↓___,       EMOJ,
-                             ↓___, ↓___,                RCLK,
+                             LSFT, ↓___,                RSFT,
 ], [
   ↓___, _🚫_, _🚫_, _🚫_, _🚫_, _🚫_,                   _🚫_, _🚫_, _🚫_, _🚫_, _🚫_, DLLN,
   TTAB, __7_, __8_, __9_, __0_, _🚫_,                   _🚫_, _🚫_, PGUP, _🚫_, _🚫_, ↓___,
   ↓___, __4_, __5_, __6_, _🚫_, _🚫_,                   BKLN, BKWD, _🚫_, FWWD, FWLN, ↓___,
-  ↓___, __1_, __2_, __3_, CLPB, _🚫_,                   _🚫_, _🚫_, _🚫_, _🚫_, _🚫_, ↓___,
+  ↓___, __1_, __2_, __3_, CLPB, _🚫_,                   _🚫_, _🚫_, _🚫_, _🚫_, CMNT, ↓___,
               ↓___, ↓___,                                           ↓___, ↓___,
-                          DELT, ↓___,                         PGDN,
-                             ↓___, ↓___,          ↓___,       LNCH,
-                             LSFT, ↓___,                ↓___,
-# ], [
-#   ↓___, ↓___, ↓___, ↓___, ↓___, ↓___,                   ↓___, ↓___, ↓___, ↓___, ↓___, ↓___,
-#   ↓___, ↓___, ↓___, ↓___, ↓___, ↓___,                   ↓___, ↓___, ↓___, ↓___, ↓___, ↓___,
-#   ↓___, ↓___, ↓___, ↓___, ↓___, ↓___,                   ↓___, ↓___, ↓___, ↓___, ↓___, ↓___,
-#   ↓___, ↓___, ↓___, ↓___, ↓___, ↓___,                   ↓___, ↓___, ↓___, ↓___, ↓___, ↓___,
-#               ↓___, ↓___,                                           ↓___, ↓___,
-#                           ↓___, ↓___,                         ↓___,
-#                              ↓___, ↓___,          ↓___,       ↓___,
-#                              ↓___, ↓___,                ↓___,
+                          DLWD, ↓___,                         PGDN,
+                             LSFT, ↓___,          ↓___,       LNCH,
+                             LSFT, ↓___,                RSFT,
+], [
+  _🚫_, _🚫_, _🚫_, _🚫_, _🚫_, _🚫_,                   _🚫_, _🚫_, _🚫_, _🚫_, _🚫_, _🚫_,
+  _🚫_, _🚫_, _🚫_, _🚫_, _🚫_, _🚫_,                   _🚫_, _🚫_, _🚫_, _🚫_, _🚫_, _🚫_,
+  _🚫_, _🚫_, _🚫_, _🚫_, _🚫_, _🚫_,                   _🚫_, BKLN, _🚫_, FWLN, _🚫_, _🚫_,
+  _🚫_, _🚫_, _🚫_, _🚫_, _🚫_, _🚫_,                   _🚫_, _🚫_, _🚫_, _🚫_, _🚫_, _🚫_,
+              _🚫_, _🚫_,                                           _🚫_, _🚫_,
+                          DLLN, _🚫_,                         _🚫_,
+                             LSFT, _🚫_,          _🚫_,       _🚫_,
+                             LSFT, _🚫_,                _🚫_,
 ]]
 
 if __name__ == '__main__':
   print('starting kmk...')
   keyboard.go()
   print('returned from kmk...')
-  
