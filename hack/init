@@ -1,0 +1,22 @@
+#!/bin/bash
+
+SIDE=$1
+if [[ "$SIDE" != "L" ]] && [[ "$SIDE" != "R" ]]; then
+    echo "Usage: hack/init L|R"
+    exit 1
+fi
+
+DIR="$(dirname ${BASH_SOURCE[0]})"
+KB_DRIVE=/Volumes/KB_$SIDE
+CIRCUITPY=$DIR/adafruit-circuitpython-raspberry_pi_pico-en_US-8.0.3.uf2
+KMK=$DIR/../kmk
+TB=$DIR/../../Dactyl5/src/modules/*
+NEO=$DIR/neopixel.py
+
+# cp -X $CIRCUITPY $KB_DRIVE
+cp -X -r $KMK $KB_DRIVE
+cp $NEO $KB_DRIVE
+# for mod in $TB; do
+#     cp -X $mod $KB_DRIVE/kmk/modules
+# done
+rm $KB_DRIVE/code.py || echo no code.py found
