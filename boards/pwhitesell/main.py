@@ -1,7 +1,6 @@
 print("Starting split mode ⌨️~⌨️")
 
 import board
-# print(dir(board))
 
 from kmk.kmk_keyboard import KMKKeyboard
 from kmk.keys import KC
@@ -155,8 +154,6 @@ __W_ = KC.W
 __X_ = KC.X
 __Y_ = KC.Y
 __Z_ = KC.Z
-LALT = KC.LALT
-RALT = KC.RALT
 SPCE = KC.SPACE
 BKSP = KC.BSPC
 QUOT = KC.QUOT
@@ -164,10 +161,12 @@ SCLN = KC.SCLN
 EXLM = KC.EXLM
 LSFT = KC.TD(KC.HT(KC.OS(KC.LSFT, tap_time=None), KC.LSFT), KC.CW)
 RSFT = KC.TD(KC.HT(KC.OS(KC.RSFT, tap_time=None), KC.RSFT), KC.CW)
-RCMD = KC.RCMD
-LCMD = KC.LCMD
+RCMD = KC.HT(KC.OS(KC.RCMD, tap_time=None), KC.RCMD)
+LCMD = KC.HT(KC.OS(KC.LCMD, tap_time=None), KC.LCMD)
+RALT = KC.HT(KC.OS(KC.RALT, tap_time=None), KC.RALT)
+LALT = KC.HT(KC.OS(KC.LALT, tap_time=None), KC.LALT)
 RCTL = KC.RCTL
-LCTL = KC.LCTL
+LCTL = KC.HT(KC.OS(KC.LCTL, tap_time=None), KC.LCTL)
 LCLK = KC.MB_LMB
 CCLK = KC.LCMD(KC.MB_LMB)
 RCLK = KC.MB_RMB
@@ -272,6 +271,18 @@ rgb = RGB(
   val_limit=255,
 )
 keyboard.extensions.append(rgb)
+
+class KeyColors:
+  Off = Color(v=0)
+  Letter = Color(h=30, s=200, v=150)
+  Number = Color(h=15, s=200, v=150)
+  Bracket = Color()
+  Punctuation = Color()
+  Mod = Color()
+  Mouse = Color(h=43, s=255, v=221)
+  Danger = Color(h=0, s=255, v=255)
+  Space = Color(s=0, v=255)
+
 rgbkeys = RGBKeys(
   coord_mapping=[
       5,    4,    3,    2,    1,    0,                     26,   27,   28,   29,   30,   31,
@@ -283,73 +294,73 @@ rgbkeys = RGBKeys(
                                 24,   25,                  48,
   ],
   key_colors = {
-    _🚫_: Color(v=0),
-    _L1_: Color(h=190),
-    L1L2: Color(h=190),
-    _L2_: Color(h=190),
-    _L3_: Color(h=190),
-    __1_: Color(h=15),
-    __2_: Color(h=15),
-    __3_: Color(h=15),
-    __4_: Color(h=15),
-    __5_: Color(h=15),
-    __6_: Color(h=15),
-    __7_: Color(h=15),
-    __8_: Color(h=15),
-    __9_: Color(h=15),
-    __0_: Color(h=15),
-    _TAB: Color(h=70),
-    CTAB: Color(h=190),
-    TTAB: Color(h=195),
-    __A_: Color(h=30),
-    __B_: Color(h=30, s=200, v=150),
-    __C_: Color(h=30, s=200, v=150),
-    __D_: Color(h=30),
-    __E_: Color(h=30, s=200, v=150),
-    __F_: Color(h=30),
-    __G_: Color(h=30, s=200, v=150),
-    __H_: Color(h=30, s=200, v=150),
-    __I_: Color(h=30, s=200, v=150),
-    __J_: Color(h=30),
-    __K_: Color(h=30),
-    __L_: Color(h=30),
-    __M_: Color(h=30, s=200, v=150),
-    __N_: Color(h=30, s=200, v=150),
-    __O_: Color(h=30, s=200, v=150),
-    __P_: Color(h=30, s=200, v=150),
-    __Q_: Color(h=30, s=200, v=150),
-    __S_: Color(h=30),
-    __R_: Color(h=30, s=200, v=150),
-    __T_: Color(h=30, s=200, v=150),
-    __U_: Color(h=30, s=200, v=150),
-    __V_: Color(h=30, s=200, v=150),
-    __W_: Color(h=30, s=200, v=150),
-    __X_: Color(h=30, s=200, v=150),
-    __Y_: Color(h=30, s=200, v=150),
-    __Z_: Color(h=30, s=200, v=150),
-    LALT: Color(h=120),
-    RALT: Color(h=120),
-    SPCE: Color(h=70),
-    SPC1: Color(h=70),
-    SP_1: Color(h=70),
-    BKSP: Color(h=0),
+    _🚫_: KeyColors.Off,
+    _L1_: KeyColors.Mod,
+    L1L2: KeyColors.Mod,
+    _L2_: KeyColors.Mod,
+    _L3_: KeyColors.Mod,
+    __1_: KeyColors.Number,
+    __2_: KeyColors.Number,
+    __3_: KeyColors.Number,
+    __4_: KeyColors.Number,
+    __5_: KeyColors.Number,
+    __6_: KeyColors.Number,
+    __7_: KeyColors.Number,
+    __8_: KeyColors.Number,
+    __9_: KeyColors.Number,
+    __0_: KeyColors.Number,
+    __A_: KeyColors.Letter,
+    __B_: KeyColors.Letter,
+    __C_: KeyColors.Letter,
+    __D_: KeyColors.Letter,
+    __E_: KeyColors.Letter,
+    __F_: KeyColors.Letter,
+    __G_: KeyColors.Letter,
+    __H_: KeyColors.Letter,
+    __I_: KeyColors.Letter,
+    __J_: KeyColors.Letter,
+    __K_: KeyColors.Letter,
+    __L_: KeyColors.Letter,
+    __M_: KeyColors.Letter,
+    __N_: KeyColors.Letter,
+    __O_: KeyColors.Letter,
+    __P_: KeyColors.Letter,
+    __Q_: KeyColors.Letter,
+    __S_: KeyColors.Letter,
+    __R_: KeyColors.Letter,
+    __T_: KeyColors.Letter,
+    __U_: KeyColors.Letter,
+    __V_: KeyColors.Letter,
+    __W_: KeyColors.Letter,
+    __X_: KeyColors.Letter,
+    __Y_: KeyColors.Letter,
+    __Z_: KeyColors.Letter,
+    _TAB: KeyColors.Space,
+    CTAB: KeyColors.Space,
+    TTAB: KeyColors.Space,
+    SPCE: KeyColors.Space,
+    SPC1: KeyColors.Space,
+    SP_1: KeyColors.Space,
+    BKSP: KeyColors.Danger,
     QUOT: Color(h=40),
     SCLN: Color(h=70),
     EXLM: Color(h=70),
-    LSFT: Color(h=120),
-    RSFT: Color(h=120),
-    RCMD: Color(h=120),
-    LCMD: Color(h=120),
-    RCTL: Color(h=120),
-    LCTL: Color(h=120),
-    LCLK: Color(h=130),
-    CCLK: Color(h=135),
-    RCLK: Color(h=130),
-    ENTR: Color(h=70),
-    CENT: Color(h=70),
-    PERD: Color(h=40),
-    COMA: Color(h=40),
-    SLSH: Color(h=40),
+    LSFT: KeyColors.Mod,
+    RSFT: KeyColors.Mod,
+    RCMD: KeyColors.Mod,
+    LCMD: KeyColors.Mod,
+    RCTL: KeyColors.Mod,
+    LCTL: KeyColors.Mod,
+    LALT: KeyColors.Mod,
+    RALT: KeyColors.Mod,
+    LCLK: KeyColors.Mouse,
+    CCLK: KeyColors.Mouse,
+    RCLK: KeyColors.Mouse,
+    ENTR: KeyColors.Space,
+    CENT: KeyColors.Space,
+    PERD: KeyColors.Punctuation,
+    COMA: KeyColors.Punctuation),
+    SLSH: KeyColors.Math,
     __↑_: Color(h=150),
     __↓_: Color(h=150),
     __←_: Color(h=150),
@@ -362,35 +373,35 @@ rgbkeys = RGBKeys(
     FWWD: Color(h=150),
     BKLN: Color(h=150),
     FWLN: Color(h=150),
-    DLWD: Color(h=0),
-    DLLN: Color(h=0),
-    _EQL: Color(h=40),
-    MINS: Color(h=40),
-    UNDS: Color(h=40),
-    LCBR: Color(h=40),
-    RCBR: Color(h=40),
-    LPRN: Color(h=40),
-    RPRN: Color(h=40),
-    LBRC: Color(h=40),
-    RBRC: Color(h=40),
-    LABK: Color(h=40),
-    RABK: Color(h=40),
-    BSLS: Color(h=40),
-    COPY: Color(h=190),
-    _CUT: Color(h=190),
-    PAST: Color(h=190),
-    UNDO: Color(h=190),
-    _ALL: Color(h=190),
-    SAVE: Color(h=190),
-    MTSL: Color(h=190),
-    FIND: Color(h=190),
-    SKSL: Color(h=190),
-    CLOS: Color(h=0),
+    DLWD: KeyColors.Danger,
+    DLLN: KeyColors.Danger,
+    _EQL: KeyColors.Math,
+    MINS: KeyColors.Math,
+    UNDS: KeyColors.Space,
+    LCBR: KeyColors.Bracket,
+    RCBR: KeyColors.Bracket,
+    LPRN: KeyColors.Bracket,
+    RPRN: KeyColors.Bracket,
+    LBRC: KeyColors.Bracket,
+    RBRC: KeyColors.Bracket,
+    LABK: KeyColors.Bracket,
+    RABK: KeyColors.Bracket,
+    BSLS: KeyColors.Punctuation,
+    COPY: KeyColors.ClipBoard,
+    _CUT: KeyColors.ClipBoard,
+    PAST: KeyColors.ClipBoard,
+    UNDO: KeyColors.Edit,
+    _ALL: KeyColors.Edit,
+    SAVE: KeyColors.Edit,
+    MTSL: KeyColors.Edit,
+    FIND: KeyColors.Edit,
+    SKSL: KeyColors.Edit,
+    CLOS: KeyColors.Danger,
     RLOD: Color(h=190),
     NTAB: Color(h=190),
     TICK: Color(h=60),
-    ESCP: Color(h=0),
-    DELT: Color(h=0),
+    ESCP: KeyColors.Danger,
+    DELT: KeyColors.Danger,
     EMOJ: Color(h=190),
     _URL: Color(h=190),
     LNCH: Color(h=190),
