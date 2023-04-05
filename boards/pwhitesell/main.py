@@ -12,11 +12,14 @@ from kmk.modules.split import Split, SplitSide
 from kmk.modules.layers import Layers
 from kmk.modules.capsword import CapsWord
 from kmk.modules.oneshot import OneShot
+from kmk.handlers.sequences import simple_key_sequence
+from kmk.modules.sticky_mod import StickyMod
 from kmk.modules.rgbkeys import RGBKeys, Color
 from storage import getmount
 from kmk.modules.holdtap import HoldTap
 from kmk.modules.tapdance import TapDance
 from kmk.utils import Debug
+import traceback
 side = SplitSide.RIGHT if str(getmount('/').label)[-1] == 'R' else SplitSide.LEFT
 
 print("split side is:", side)
@@ -33,6 +36,7 @@ else:
 keyboard = KMKKeyboard()
 keyboard.debug_enabled = True
 
+keyboard.modules.append(StickyMod())
 keyboard.modules.append(MouseKeys())
 keyboard.modules.append(HoldTap())
 
@@ -63,7 +67,7 @@ else:
     board.GP7, board.GP6, board.GP5, board.GP4, board.GP3, board.GP2
   )
   keyboard.row_pins = (
-    # board.GP21,
+    # boafrd.GP21,
     board.GP23,
     board.GP20,
     board.GP22,
@@ -88,9 +92,11 @@ if side == SplitSide.RIGHT:
 split = Split(
   split_side=side,
   split_target_left=False,
-  uart_flip=True,
+  # uart_flip=True,
+  uart_flip=False,
   split_flip=False,
-  use_pio=True,
+  # use_pio=True,
+  use_pio=False,
   data_pin=board.GP1,
   data_pin2=board.GP0,
 )
@@ -99,10 +105,8 @@ keyboard.modules.append(split)
 _L1_ = KC.MO(1)
 SP_1 = KC.HT(KC.SPACE, KC.MO(1), tap_time=200)
 SPC1 = KC.HT(KC.SPACE, KC.MO(1), tap_time=200)
+BSP2 = KC.HT(KC.BSPC, KC.MO(2), tap_time=200)
 _L2_ = KC.MO(2)
-L1L2 = KC.TD(_L1_, _L2_)
-_L3_ = KC.MO(3)
-_L4_ = KC.MO(4)
 _🚫_ = KC.NO
 ↓___ = KC.TRNS
 __1_ = KC.N1
@@ -126,7 +130,7 @@ _8__ = KC.N8
 _9__ = KC.N9
 _0__ = KC.N0
 _TAB = KC.TAB
-CTAB = KC.LCMD(KC.TAB)
+CTAB = KC.SM(KC.TAB, KC.LCMD)
 TTAB = KC.LCMD(KC.GRV)
 __A_ = KC.A
 __B_ = KC.B
@@ -168,7 +172,14 @@ LALT = KC.HT(KC.OS(KC.LALT, tap_time=None), KC.LALT)
 RCTL = KC.RCTL
 LCTL = KC.HT(KC.OS(KC.LCTL, tap_time=None), KC.LCTL)
 LCLK = KC.MB_LMB
-CCLK = KC.LCMD(KC.MB_LMB)
+# CCLK = KC.LCMD(KC.MB_LMB)
+CCLK = NEXT = simple_key_sequence((
+  KC.LCMD(no_release=True),
+  KC.MACRO_SLEEP_MS(30),
+  KC.MB_LMB,
+  KC.MACRO_SLEEP_MS(30),
+  KC.LCMD(no_press=True),
+))
 RCLK = KC.MB_RMB
 ENTR = KC.ENT
 CENT = KC.LCMD(KC.ENT)
@@ -231,23 +242,73 @@ MSSN = KC.LCTL(KC.UP)
 APPN = KC.LCTL(KC.DOWN)
 
 class WordsTimeout():
-  words_timeout = None
-  keyboard = None
-  def __init__(self, keyboard):
+  def __init__(self, keyboard, keys):
+    self.timeout = None
     self.keyboard = keyboard
-  def words(self, key, keyboard, *args):
-    if self.words_timeout is not None:
-      keyboard.cancel_timeout(self.words_timeout)
-      layers._mo_released(_L4_, keyboard)
-    layers._mo_pressed(_L4_, keyboard) # TODO dont use internal methods
-    self.words_timeout = keyboard.set_timeout(
-      300,
-      lambda: layers._mo_released(_L4_, keyboard) # TODO dont use internal methods
-    )
+    for key in keys:
+      key.after_press_handler(self.on_word_key)
+  def on_word_key(self, key, keyboard, *args):
+    if self.timeout is None:
+      self.keyboard.keymap[0][41] = SPCE
+      self.keyboard.keymap[0][42] = SPCE
+    if self.timeout is not None:
+      self.keyboard.cancel_timeout(self.timeout)
+    self.timeout = self.keyboard.set_timeout(300, self.release)
     return key
-wt = WordsTimeout(keyboard)
-for k in [ KC.A, KC.B, KC.C, KC.D, KC.E, KC.F, KC.G, KC.H, KC.I, KC.J, KC.K, KC.L, KC.M, KC.N, KC.O, KC.P, KC.Q, KC.S, KC.R, KC.T, KC.U, KC.V, KC.W, KC.X, KC.Y, KC.Z]:
-  k.after_press_handler(wt.words)
+  def release(self):
+    self.keyboard.keymap[0][41] = SP_1
+    self.keyboard.keymap[0][42] = SPC1
+    self.timeout = None
+
+wt = WordsTimeout(
+  keyboard, 
+  [KC.A, KC.B, KC.C, KC.D, KC.E, KC.F, KC.G, KC.H, KC.I, KC.J, KC.K, KC.L, KC.M, KC.N, KC.O, KC.P, KC.Q, KC.S, KC.R, KC.T, KC.U, KC.V, KC.W, KC.X, KC.Y, KC.Z]
+)
+
+class MouseLayer():
+  def __init__(self, keyboard, keys):
+    self.timeout = None
+    self.keyboard = keyboard
+    for key in keys:
+      key.after_press_handler(self.on_mouse_key)
+    self.pmw3360 = next(x for x in keyboard.modules if type(x) is PMW3360)
+    if self.pmw3360 is not None:
+      self.pmw3360.on_move = self.on_mouse_move
+  def on_mouse_key(self, key, keyboard, *args):
+    self.on_mouse_move(keyboard)
+    return key
+  def on_mouse_move(self, keyboard):
+    if self.timeout is None:
+      self.keyboard.keymap[0][17] = CCLK
+      self.keyboard.keymap[0][16] = LCLK
+      self.keyboard.keymap[0][15] = RCLK
+      self.keyboard.keymap[0][19] = LCLK
+      self.keyboard.keymap[0][20] = RCLK
+      self.refresh_keys()
+    if self.timeout is not None:
+      self.keyboard.cancel_timeout(self.timeout)
+    self.timeout = self.keyboard.set_timeout(300, self.release)
+  def release(self):
+    self.keyboard.keymap[0][17] = __G_
+    self.keyboard.keymap[0][16] = __F_
+    self.keyboard.keymap[0][15] = __D_
+    self.keyboard.keymap[0][19] = __J_
+    self.keyboard.keymap[0][20] = __K_
+    self.timeout = None
+    self.refresh_keys()
+  def refresh_keys(self):
+    rgbkeys_module = next(x for x in self.keyboard.modules if type(x) is RGBKeys)
+    if rgbkeys_module is None:
+      return
+    for i in [15, 16, 19, 20]:
+      try:
+        rgbkeys_module.refresh_key(i, self.keyboard)
+      except Exception as e:
+        print(e)
+        traceback.print_exception(e)
+
+if side == SplitSide.RIGHT:
+  ml = MouseLayer(keyboard, [LCLK, RCLK])
 
 def ball_scroll_enable(key, keyboard, *args):
     pmw3360.start_v_scroll()
@@ -269,167 +330,186 @@ rgb = RGB(
   sat_default=255,
   val_default=0,
   val_limit=255,
+  split=split,
 )
 keyboard.extensions.append(rgb)
 
 class KeyColors:
   Off = Color(v=0)
-  Letter = Color(h=30, s=200, v=150)
-  Number = Color(h=15, s=200, v=150)
-  Bracket = Color()
-  Punctuation = Color()
-  Mod = Color()
-  Mouse = Color(h=43, s=255, v=221)
-  Danger = Color(h=0, s=255, v=255)
-  Space = Color(s=0, v=255)
+  Letter = Color(h=140, s=100)
+  Number = Color(h=18)
+  Math = Color(h=18)
+  Bracket = Color(h=42, s=200)
+  Punctuation = Color(h=42)
+  Mod = Color(h=205)
+  Mouse = Color(h=20)
+  Danger = Color(h=0)
+  Space = Color(s=0)
+  Nav = Color(h=150)
+  Edit = Color(h=110)
+  Browse = Color(s=150)
+  ClipBoard = Color(h=88)
+  Window = Color(h=45)
+  SPC1 = Color(s=0, other=Mod)
+  SP_1 = Color(s=0, other=Mod)
+  BackSpace_L2 = Color(h=0, other=Mod)
 
-rgbkeys = RGBKeys(
-  coord_mapping=[
-      5,    4,    3,    2,    1,    0,                     26,   27,   28,   29,   30,   31,
-      6,    7,    8,    9,   10,   11,                     37,   36,   35,   34,   33,   32,
-     17,   16,   15,   14,   13,   12,                     38,   39,   40,   41,   42,   43,
-                  18,   19,                                             45,   44,
-                              20,   21,                           46,
-                                23,   22,            47,         49,
-                                24,   25,                  48,
-  ],
-  key_colors = {
-    _🚫_: KeyColors.Off,
-    _L1_: KeyColors.Mod,
-    L1L2: KeyColors.Mod,
-    _L2_: KeyColors.Mod,
-    _L3_: KeyColors.Mod,
-    __1_: KeyColors.Number,
-    __2_: KeyColors.Number,
-    __3_: KeyColors.Number,
-    __4_: KeyColors.Number,
-    __5_: KeyColors.Number,
-    __6_: KeyColors.Number,
-    __7_: KeyColors.Number,
-    __8_: KeyColors.Number,
-    __9_: KeyColors.Number,
-    __0_: KeyColors.Number,
-    __A_: KeyColors.Letter,
-    __B_: KeyColors.Letter,
-    __C_: KeyColors.Letter,
-    __D_: KeyColors.Letter,
-    __E_: KeyColors.Letter,
-    __F_: KeyColors.Letter,
-    __G_: KeyColors.Letter,
-    __H_: KeyColors.Letter,
-    __I_: KeyColors.Letter,
-    __J_: KeyColors.Letter,
-    __K_: KeyColors.Letter,
-    __L_: KeyColors.Letter,
-    __M_: KeyColors.Letter,
-    __N_: KeyColors.Letter,
-    __O_: KeyColors.Letter,
-    __P_: KeyColors.Letter,
-    __Q_: KeyColors.Letter,
-    __S_: KeyColors.Letter,
-    __R_: KeyColors.Letter,
-    __T_: KeyColors.Letter,
-    __U_: KeyColors.Letter,
-    __V_: KeyColors.Letter,
-    __W_: KeyColors.Letter,
-    __X_: KeyColors.Letter,
-    __Y_: KeyColors.Letter,
-    __Z_: KeyColors.Letter,
-    _TAB: KeyColors.Space,
-    CTAB: KeyColors.Space,
-    TTAB: KeyColors.Space,
-    SPCE: KeyColors.Space,
-    SPC1: KeyColors.Space,
-    SP_1: KeyColors.Space,
-    BKSP: KeyColors.Danger,
-    QUOT: Color(h=40),
-    SCLN: Color(h=70),
-    EXLM: Color(h=70),
-    LSFT: KeyColors.Mod,
-    RSFT: KeyColors.Mod,
-    RCMD: KeyColors.Mod,
-    LCMD: KeyColors.Mod,
-    RCTL: KeyColors.Mod,
-    LCTL: KeyColors.Mod,
-    LALT: KeyColors.Mod,
-    RALT: KeyColors.Mod,
-    LCLK: KeyColors.Mouse,
-    CCLK: KeyColors.Mouse,
-    RCLK: KeyColors.Mouse,
-    ENTR: KeyColors.Space,
-    CENT: KeyColors.Space,
-    PERD: KeyColors.Punctuation,
-    COMA: KeyColors.Punctuation),
-    SLSH: KeyColors.Math,
-    __↑_: Color(h=150),
-    __↓_: Color(h=150),
-    __←_: Color(h=150),
-    __→_: Color(h=150),
-    PGUP: Color(h=150),
-    PGDN: Color(h=150),
-    HOME: Color(h=150),
-    _END: Color(h=150),
-    BKWD: Color(h=150),
-    FWWD: Color(h=150),
-    BKLN: Color(h=150),
-    FWLN: Color(h=150),
-    DLWD: KeyColors.Danger,
-    DLLN: KeyColors.Danger,
-    _EQL: KeyColors.Math,
-    MINS: KeyColors.Math,
-    UNDS: KeyColors.Space,
-    LCBR: KeyColors.Bracket,
-    RCBR: KeyColors.Bracket,
-    LPRN: KeyColors.Bracket,
-    RPRN: KeyColors.Bracket,
-    LBRC: KeyColors.Bracket,
-    RBRC: KeyColors.Bracket,
-    LABK: KeyColors.Bracket,
-    RABK: KeyColors.Bracket,
-    BSLS: KeyColors.Punctuation,
-    COPY: KeyColors.ClipBoard,
-    _CUT: KeyColors.ClipBoard,
-    PAST: KeyColors.ClipBoard,
-    UNDO: KeyColors.Edit,
-    _ALL: KeyColors.Edit,
-    SAVE: KeyColors.Edit,
-    MTSL: KeyColors.Edit,
-    FIND: KeyColors.Edit,
-    SKSL: KeyColors.Edit,
-    CLOS: KeyColors.Danger,
-    RLOD: Color(h=190),
-    NTAB: Color(h=190),
-    TICK: Color(h=60),
-    ESCP: KeyColors.Danger,
-    DELT: KeyColors.Danger,
-    EMOJ: Color(h=190),
-    _URL: Color(h=190),
-    LNCH: Color(h=190),
-    CLPB: Color(h=190),
-    CMNT: Color(h=190),
-    PRNT: Color(h=190),
-    PTSC: Color(h=190),
-    VDSC: Color(h=190),
-    OPEN: Color(h=190),
-    CMCT: Color(h=120),
-    NEW_: Color(h=120),
-    MSSN: Color(h=130),
-    APPN: Color(h=130),
-  },
-  default_color=Color(h=0, s=255, v=255),
-  split_side=side,
-  split_offset=26,
-)
-keyboard.modules.append(rgbkeys)
+if side == SplitSide.RIGHT:
+  rgbkeys = RGBKeys(
+    # coord_mapping=[
+    #     5,    4,    3,    2,    1,    0,                     26,   27,   28,   29,   30,   31,
+    #     6,    7,    8,    9,   10,   11,                     37,   36,   35,   34,   33,   32,
+    #   17,   16,   15,   14,   13,   12,                     38,   39,   40,   41,   42,   43,
+    #                 18,   19,                                             45,   44,
+    #                             20,   21,                           46,
+    #                               23,   22,            47,         49,
+    #                               24,   25,                  48,
+    # ],
+    coord_mapping=[
+        29,    28,    27,   26,   25,   24,                      0,    1,    2,    3,    4,    5,
+        30,    31,    32,   33,   34,   35,                     11,   10,    9,    8,    7,    6,
+        41,    40,    39,   38,   37,   36,                     12,   13,    14,   15,   16,   17,
+                    42,   43,                                             19,   18,
+                                44,   45,                           20,
+                                  47,   46,            21,         23,
+                                  48,   49,                  22,
+    ],
+    key_colors = {
+      _🚫_: KeyColors.Off,
+      _L1_: KeyColors.Mod,
+      _L2_: KeyColors.Mod,
+      __1_: KeyColors.Number,
+      __2_: KeyColors.Number,
+      __3_: KeyColors.Number,
+      __4_: KeyColors.Number,
+      __5_: KeyColors.Number,
+      __6_: KeyColors.Number,
+      __7_: KeyColors.Number,
+      __8_: KeyColors.Number,
+      __9_: KeyColors.Number,
+      __0_: KeyColors.Number,
+      __A_: KeyColors.Letter,
+      __B_: KeyColors.Letter,
+      __C_: KeyColors.Letter,
+      __D_: KeyColors.Letter,
+      __E_: KeyColors.Letter,
+      __F_: KeyColors.Letter,
+      __G_: KeyColors.Letter,
+      __H_: KeyColors.Letter,
+      __I_: KeyColors.Letter,
+      __J_: KeyColors.Letter,
+      __K_: KeyColors.Letter,
+      __L_: KeyColors.Letter,
+      __M_: KeyColors.Letter,
+      __N_: KeyColors.Letter,
+      __O_: KeyColors.Letter,
+      __P_: KeyColors.Letter,
+      __Q_: KeyColors.Letter,
+      __S_: KeyColors.Letter,
+      __R_: KeyColors.Letter,
+      __T_: KeyColors.Letter,
+      __U_: KeyColors.Letter,
+      __V_: KeyColors.Letter,
+      __W_: KeyColors.Letter,
+      __X_: KeyColors.Letter,
+      __Y_: KeyColors.Letter,
+      __Z_: KeyColors.Letter,
+      _TAB: KeyColors.Space,
+      CTAB: KeyColors.Space,
+      TTAB: KeyColors.Space,
+      SPCE: KeyColors.Space,
+      SPC1: KeyColors.SPC1,
+      SP_1: KeyColors.SP_1,
+      BKSP: KeyColors.Danger,
+      BSP2: KeyColors.BackSpace_L2,
+      QUOT: KeyColors.Punctuation,
+      SCLN: KeyColors.Punctuation,
+      EXLM: KeyColors.Punctuation,
+      LSFT: KeyColors.Mod,
+      RSFT: KeyColors.Mod,
+      RCMD: KeyColors.Mod,
+      LCMD: KeyColors.Mod,
+      RCTL: KeyColors.Mod,
+      LCTL: KeyColors.Mod,
+      LALT: KeyColors.Mod,
+      RALT: KeyColors.Mod,
+      LCLK: KeyColors.Mouse,
+      CCLK: KeyColors.Mouse,
+      RCLK: KeyColors.Mouse,
+      ENTR: KeyColors.Space,
+      CENT: KeyColors.Space,
+      PERD: KeyColors.Punctuation,
+      COMA: KeyColors.Punctuation,
+      SLSH: KeyColors.Math,
+      __↑_: KeyColors.Nav,
+      __↓_: KeyColors.Nav,
+      __←_: KeyColors.Nav,
+      __→_: KeyColors.Nav,
+      PGUP: KeyColors.Nav,
+      PGDN: KeyColors.Nav,
+      HOME: KeyColors.Nav,
+      _END: KeyColors.Nav,
+      BKWD: KeyColors.Nav,
+      FWWD: KeyColors.Nav,
+      BKLN: KeyColors.Nav,
+      FWLN: KeyColors.Nav,
+      DLWD: KeyColors.Danger,
+      DLLN: KeyColors.Danger,
+      _EQL: KeyColors.Math,
+      MINS: KeyColors.Math,
+      UNDS: KeyColors.Punctuation,
+      LCBR: KeyColors.Bracket,
+      RCBR: KeyColors.Bracket,
+      LPRN: KeyColors.Bracket,
+      RPRN: KeyColors.Bracket,
+      LBRC: KeyColors.Bracket,
+      RBRC: KeyColors.Bracket,
+      LABK: KeyColors.Bracket,
+      RABK: KeyColors.Bracket,
+      BSLS: KeyColors.Punctuation,
+      COPY: KeyColors.ClipBoard,
+      _CUT: KeyColors.ClipBoard,
+      PAST: KeyColors.ClipBoard,
+      UNDO: KeyColors.Edit,
+      _ALL: KeyColors.Edit,
+      SAVE: KeyColors.Edit,
+      MTSL: KeyColors.Edit,
+      FIND: KeyColors.Edit,
+      SKSL: KeyColors.Edit,
+      CLOS: KeyColors.Danger,
+      RLOD: KeyColors.Browse,
+      NTAB: KeyColors.Browse,
+      TICK: KeyColors.Punctuation,
+      ESCP: KeyColors.Danger,
+      DELT: KeyColors.Danger,
+      EMOJ: KeyColors.Edit,
+      _URL: KeyColors.Browse,
+      LNCH: KeyColors.Window,
+      CLPB: KeyColors.ClipBoard,
+      CMNT: KeyColors.Edit,
+      PRNT: KeyColors.Browse,
+      PTSC: KeyColors.Window,
+      VDSC: KeyColors.Window,
+      OPEN: KeyColors.Browse,
+      CMCT: KeyColors.Mod,
+      NEW_: KeyColors.Edit,
+      MSSN: KeyColors.Window,
+      APPN: KeyColors.Window,
+    },
+    default_color=Color(h=0, s=255, v=255),
+    split_side=side,
+    split_offset=26,
+  )
+  keyboard.modules.append(rgbkeys)
 
 keyboard.keymap = [[
   _TAB, __Q_, __W_, __E_, __R_, __T_,                   __Y_, __U_, __I_, __O_, __P_, QUOT,
   LSFT, __A_, __S_, __D_, __F_, __G_,                   __H_, __J_, __K_, __L_, SCLN, ENTR,
   LCTL, __Z_, __X_, __C_, __V_, __B_,                   __N_, __M_, COMA, PERD, SLSH, RSFT,
               LALT, LCMD,                                           LCMD, LALT,
-                          BKSP, SP_1,                         SPC1,
-                             LCLK, _L2_,          RCLK,       _L2_,
-                                RCLK, _L3_,              LCLK
+                          BSP2, SP_1,                         SPC1,
+                             LSFT, LCMD,          RCLK,       _L2_,
+                                LSFT, LCTL,              LCLK
 ], [
   ↓___, ESCP, __7_, __8_, __9_, LCBR,                   RCBR, VDSC, __↑_, _🚫_, PTSC, TICK,
   ↓___, __0_, __4_, __5_, __6_, LPRN,                   RPRN, __←_, EXLM, __→_, _🚫_, CENT,
@@ -446,22 +526,6 @@ keyboard.keymap = [[
                           DLWD, ↓___,                         PGDN,
                              LSFT, ↓___,          ↓___,       LNCH,
                              LSFT, ↓___,                RSFT,
-], [
-  TTAB, _🚫_, _🚫_, _🚫_, _🚫_, _🚫_,                   _🚫_, _🚫_, _🚫_, _🚫_, _🚫_, _🚫_,
-  _🚫_, _🚫_, _🚫_, _🚫_, _🚫_, _🚫_,                   _🚫_, BKLN, _🚫_, FWLN, _🚫_, _🚫_,
-  _🚫_, _🚫_, _🚫_, _🚫_, _🚫_, _🚫_,                   _🚫_, _🚫_, _🚫_, _🚫_, _🚫_, _🚫_,
-              _🚫_, _🚫_,                                           _🚫_, _🚫_,
-                          DLLN, _🚫_,                         _🚫_,
-                             LSFT, _🚫_,          _🚫_,       _🚫_,
-                             LSFT, _🚫_,                _🚫_,
-], [
-  _TAB, __Q_, __W_, __E_, __R_, __T_,                   __Y_, __U_, __I_, __O_, __P_, QUOT,
-  LSFT, __A_, __S_, __D_, __F_, __G_,                   __H_, __J_, __K_, __L_, SCLN, ENTR,
-  LCTL, __Z_, __X_, __C_, __V_, __B_,                   __N_, __M_, COMA, PERD, SLSH, RSFT,
-              LALT, LCMD,                                           LCMD, LALT,
-                          BKSP, SPCE,                         SPCE,
-                             LCLK, _L2_,          LCLK,       _L2_,
-                                RCLK, _L3_,              RCLK,
 ]]
 
 if __name__ == '__main__':

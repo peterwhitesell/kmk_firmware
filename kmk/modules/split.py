@@ -53,7 +53,9 @@ class Split(Module):
         self._uart = None
         self._uart_interval = uart_interval
         self._debug_enabled = debug_enabled
-        self.uart_header = bytearray([0xB2])  # Any non-zero byte should work
+        self.uart_header = 0xB2  # Any non-zero byte should work
+        self._msg_receivers = {}
+        self.add_receiver(self.uart_header, self._receive_msg)
 
         if self.split_type == SplitType.BLE:
             try:
@@ -123,8 +125,10 @@ class Split(Module):
             self.split_offset = keyboard.matrix[-1].coord_mapping[-1] + 1
 
         if self.split_type == SplitType.UART and self.data_pin is not None:
+            print('************* is_target ', self._is_target)
             if self._is_target or not self.uart_flip:
                 if self._use_pio:
+                    print('  tx is pin2')
                     self._uart = self.PIO_UART(tx=self.data_pin2, rx=self.data_pin)
                 else:
                     self._uart = busio.UART(
@@ -132,6 +136,7 @@ class Split(Module):
                     )
             else:
                 if self._use_pio:
+                    print('  tx is pin1')
                     self._uart = self.PIO_UART(tx=self.data_pin, rx=self.data_pin2)
                 else:
                     self._uart = busio.UART(
@@ -318,12 +323,14 @@ class Split(Module):
 
     def _serialize_update(self, update):
         buffer = bytearray(2)
+        print('-----serialize_update', update)
         buffer[0] = update.key_number
         buffer[1] = update.pressed
         return buffer
 
     def _deserialize_update(self, update):
         kevent = KeyEvent(key_number=update[0], pressed=update[1])
+        print('----deserialize-update', kevent, update, update.decode())
         return kevent
 
     def _send_ble(self, update):
@@ -356,13 +363,12 @@ class Split(Module):
         return checksum
 
     def _send_uart(self, update):
-        # Change offsets depending on where the data is going to match the correct
-        # matrix location of the receiever
         if self._uart is not None:
-            update = self._serialize_update(update)
-            self._uart.write(self.uart_header)
-            self._uart.write(update)
-            self._uart.write(self._checksum(update))
+            self.send_msg(self.uart_header, self._serialize_update(update))
+
+    def send_msg(self, msg_type, msg):
+        msg = bytes([msg_type]) + bytes([len(msg)]) + msg + self._checksum(msg)
+        self._uart.write(msg)
 
     def _receive_uart(self, keyboard):
         if self._uart is not None and self._uart.in_waiting > 0 or self._uart_buffer:
@@ -372,13 +378,30 @@ class Split(Module):
 
                 microcontroller.reset()
 
-            while self._uart.in_waiting >= 4:
-                # Check the header
-                if self._uart.read(1) == self.uart_header:
-                    update = self._uart.read(2)
+            while self._uart.in_waiting >= 5:
+                msg_type = self._uart.read(1)[0]
+                print('receiving msg', bytes([msg_type]))
+                if msg_type not in self._msg_receivers:
+                    print('WARNING received invalid msg_type', bytes([msg_type]))
+                    continue
+                msg_len = int(self._uart.read(1)[0])
+                print('  msg_len', msg_len)
+                msg = self._uart.read(msg_len)
+                print('  msg', msg)
+                checksum = self._uart.read(1)
+                print('  checksum', checksum)
+                if checksum != self._checksum(msg):
+                    print('WARNING received msg with invalid checksum')
+                    continue
+                self._msg_receivers[msg_type](msg, keyboard)
 
-                    # check the checksum
-                    if self._checksum(update) == self._uart.read(1):
-                        self._uart_buffer.append(self._deserialize_update(update))
-            if self._uart_buffer:
-                keyboard.secondary_matrix_update = self._uart_buffer.pop(0)
+    def add_receiver(self, msg_type, receiver):
+        print('----adding', msg_type, receiver, self._msg_receivers)
+        if msg_type in self._msg_receivers:
+            raise KeyError("The chosen msg_type is already in use. You must use a unique msg_type")
+        self._msg_receivers[msg_type] = receiver
+    
+    def _receive_msg(self, msg, keyboard):
+        self._uart_buffer.append(self._deserialize_update(msg))
+        if self._uart_buffer:
+            keyboard.secondary_matrix_update = self._uart_buffer.pop(0)

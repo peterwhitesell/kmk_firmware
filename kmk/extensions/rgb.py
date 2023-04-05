@@ -6,6 +6,7 @@ from kmk.handlers.stock import passthrough as handler_passthrough
 from kmk.keys import make_key
 from kmk.kmktime import PeriodicTimer
 from kmk.utils import Debug, clamp
+from kmk.modules.split import SplitSide
 
 debug = Debug(__name__)
 
@@ -108,6 +109,7 @@ class RGB(Extension):
         disable_auto_write=False,
         pixels=None,
         refresh_rate=60,
+        split=None,
     ):
         if pixels is None:
             import neopixel
@@ -124,10 +126,11 @@ class RGB(Extension):
         # PixelBuffer are already iterable, can't do the usual `try: iter(...)`
         if issubclass(self.pixels.__class__, PixelBuf):
             self.pixels = (self.pixels,)
-
+        self._num_pixels = 0
+        for ps in self.pixels:
+            self._num_pixels += len(ps)
         if self.num_pixels == 0:
-            for pixels in self.pixels:
-                self.num_pixels += len(pixels)
+            self.num_pixels = self._num_pixels
 
         if debug.enabled:
             for n, pixels in enumerate(self.pixels):
@@ -156,6 +159,11 @@ class RGB(Extension):
         self.refresh_rate = refresh_rate
 
         self._substep = 0
+
+        self.split_header = 0xC0
+        self.split = split
+        if self.split is not None:
+            self.split.add_receiver(self.split_header, self.receive_split_msg)
 
         make_key(
             names=('RGB_TOG',), on_press=self._rgb_tog, on_release=handler_passthrough
@@ -278,21 +286,84 @@ class RGB(Extension):
         else:
             self.set_rgb_fill(hsv_to_rgb(hue, sat, val))
 
+    def receive_split_msg(self, msg, keyboard):
+        rgbs = []
+        for i in range(0, len(msg), 4):
+            rgbs.append([((int(msg[i+0]), int(msg[i+1]), int(msg[i+2]))), int(msg[i+3])])
+        self._set_rgbs(rgbs)
+    
+    def send_split_msg(self, rgbs):
+        msg = bytes([])
+        for item in rgbs:
+            rgb, index = item
+            msg = msg + bytes([rgb[0], rgb[1], rgb[2], index])
+        self.split.send_msg(self.split_header, msg)
+
     def set_rgb(self, rgb, index):
         '''
         Takes an RGB or RGBW and displays it on a single LED/Neopixel
         :param rgb: RGB or RGBW
         :param index: Index of LED/Pixel
         '''
+        if self.split == None:
+            # print('----not split mode, so setting rgb normall')
+            self._set_rgb(rgb, index)
+            return
+        if (self.split.split_side == SplitSide.RIGHT and self.split.split_target_left) or (self.split.split_side == SplitSide.LEFT and not self.split.split_target_left):
+            # print('---do nothing if not split side')
+            return
+        if index >= self._num_pixels:
+            # print('----index ', index, ' greater number of pixels, so sending to other side')
+            self.send_split_msg([[rgb, index - self._num_pixels]])
+            return
+        # print('----index ', index, ' is in range, so setting it')
+        self._set_rgb(rgb, index)
+
+    def _set_rgb(self, rgb, index):
         if 0 <= index <= self.num_pixels - 1:
             for pixels in self.pixels:
                 if index <= (len(pixels) - 1):
                     pixels[index] = rgb
                     break
                 index -= len(pixels)
-
             if not self.disable_auto_write:
                 pixels.show()
+
+    def set_rgbs(self, rgbs):
+        this_side = []
+        other_side = []
+        for item in rgbs:
+            rgb, index = item
+            if self.split == None:
+                # print('-s---not split mode, so setting rgb normall')
+                this_side.append(item)
+                continue
+            if (self.split.split_side == SplitSide.RIGHT and self.split.split_target_left) or (self.split.split_side == SplitSide.LEFT and not self.split.split_target_left):
+                # print('-s--do nothing if not split side')
+                continue
+            if index >= self._num_pixels:
+                # print('-s---index ', index, ' greater number of pixels, so sending to other side')
+                other_side.append([rgb, index - self._num_pixels])
+                continue
+            # print('-s---index ', index, ' is in range, so setting it')
+            this_side.append(item)
+        self._set_rgbs(this_side)
+        self.send_split_msg(other_side)
+
+    def _set_rgbs(self, rgbs):
+        self.disable_auto_write = True
+        for item in rgbs:
+            rgb, index = item
+            # print('rgb, index: ', rgb, index)
+            if 0 <= index <= self.num_pixels - 1:
+                for pixels in self.pixels:
+                    if index <= (len(pixels) - 1):
+                        pixels[index] = rgb
+                        break
+                    index -= len(pixels)
+                if not self.disable_auto_write:
+                    pixels.show()
+        self.show()
 
     def set_rgb_fill(self, rgb):
         '''

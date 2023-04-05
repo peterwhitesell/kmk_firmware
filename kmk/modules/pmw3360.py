@@ -4,6 +4,7 @@ import microcontroller
 from kmk.hid import HID_REPORT_SIZES, HIDReportTypes
 
 import time
+import math
 
 from kmk.modules import Module
 from kmk.modules.pmw3360_firmware import firmware
@@ -36,7 +37,7 @@ class PMW3360(Module):
     DIR_WRITE = 0x80
     DIR_READ = 0x7F
 
-    def __init__(self, cs, sclk, miso, mosi, invert_x=False, invert_y=False, flip_xy=False):
+    def __init__(self, cs, sclk, miso, mosi, invert_x=False, invert_y=False, flip_xy=False, on_move=lambda keyboard: None):
         print("In pmw3360 __init__ again")
         self.cs = digitalio.DigitalInOut(cs)
         self.cs.direction = digitalio.Direction.OUTPUT
@@ -48,6 +49,7 @@ class PMW3360(Module):
         self.volume_control = False
         self.v_scroll_ctr = 0
         self.scroll_res = 10
+        self.on_move = on_move
 
     def start_v_scroll(self, enabled=True):
         self.scroll_control = enabled
@@ -198,7 +200,9 @@ class PMW3360(Module):
                 delta_x *= -1
             if self.invert_y:
                 delta_y *= -1
-            print('Delta: ', delta_x, ' ', delta_y)
+            if delta_x == 0 and delta_y == 0:
+                return
+            # print('Delta: ', delta_x, ' ', delta_y)
             if self.scroll_control:
                 #   vertical scroll
                 self.v_scroll_ctr += delta_y
@@ -218,15 +222,22 @@ class PMW3360(Module):
                     self.v_scroll_ctr = 0
             else:
                 if delta_x:
-                    AX.X.move(keyboard, delta_x)
+                    AX.X.move(keyboard, self._scale_mouse_move(delta_x))
                 if delta_y:
-                    AX.Y.move(keyboard, delta_y)
+                    AX.Y.move(keyboard, self._scale_mouse_move(delta_y))
+                if self.on_move is not None:
+                    self.on_move(keyboard)
 
     def on_powersave_enable(self, keyboard):
         return
 
     def on_powersave_disable(self, keyboard):
         return
-
-
-
+    def _scale_mouse_move(self, val):
+        sign = math.copysign(1, val)
+        sqrd = abs(val**1.5)
+        scaled = sqrd // 4
+        ensured = max(scaled, 1)
+        signed = math.copysign(ensured, sign)
+        typed = int(signed)
+        return typed

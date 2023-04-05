@@ -12,8 +12,18 @@ MAIN_PY=$DIR/../boards/pwhitesell/main.py
 RGB_KEYS=$DIR/../kmk/modules/rgbkeys.py
 PMW=$DIR/../kmk/modules/pmw3360.py
 CAPSWORD=$DIR/../kmk/modules/capsword.py
+SPLIT=$DIR/../kmk/modules/split.py
+RGB=$DIR/../kmk/extensions/rgb.py
 
 cp -X $MAIN_PY $KB_DRIVE
-cp -X $RGB_KEYS $KB_DRIVE/kmk/modules
-cp -X $PMW $KB_DRIVE/kmk/modules
-cp -X $CAPSWORD $KB_DRIVE/kmk/modules
+for m in $RGB_KEYS $PMW $SPLIT; do
+    echo copying $m
+    cp -X $m $KB_DRIVE/kmk/modules
+done
+for e in $RGB; do
+    echo copying $e
+    cp -X $e $KB_DRIVE/kmk/extensions
+done
+# cp -X $RGB_KEYS $KB_DRIVE/kmk/modules
+# cp -X $PMW $KB_DRIVE/kmk/modules
+# cp -X $CAPSWORD $KB_DRIVE/kmk/modules
