@@ -40,7 +40,9 @@ class Split(Module):
         debug_enabled=False,
     ):
         self._is_target = True
-        self._uart_buffer = []
+        self._uart_buffer = bytearray([])
+        self._uart_to_read = 0
+        self._uart_receiving_msg_type = None
         self.split_flip = split_flip
         self.split_side = split_side
         self.split_type = split_type
@@ -125,22 +127,29 @@ class Split(Module):
             self.split_offset = keyboard.matrix[-1].coord_mapping[-1] + 1
 
         if self.split_type == SplitType.UART and self.data_pin is not None:
-            print('************* is_target ', self._is_target)
+            print('SPLIT is_target ', self._is_target)
             if self._is_target or not self.uart_flip:
+                print('  tx is pin2')
                 if self._use_pio:
-                    print('  tx is pin2')
                     self._uart = self.PIO_UART(tx=self.data_pin2, rx=self.data_pin)
                 else:
                     self._uart = busio.UART(
-                        tx=self.data_pin2, rx=self.data_pin, timeout=self._uart_interval
+                        tx=self.data_pin2,
+                        rx=self.data_pin,
+                        timeout=self._uart_interval,
+                        receiver_buffer_size=2048, baudrate=115200,
                     )
             else:
+                print('  tx is pin1')
                 if self._use_pio:
-                    print('  tx is pin1')
                     self._uart = self.PIO_UART(tx=self.data_pin, rx=self.data_pin2)
                 else:
                     self._uart = busio.UART(
-                        tx=self.data_pin, rx=self.data_pin2, timeout=self._uart_interval
+                        tx=self.data_pin,
+                        rx=self.data_pin2,
+                        timeout=self._uart_interval,
+                        receiver_buffer_size=2048,
+                        baudrate=115200,
                     )
 
         # Attempt to sanely guess a coord_mapping if one is not provided.
@@ -183,7 +192,7 @@ class Split(Module):
     def after_matrix_scan(self, keyboard):
         if keyboard.matrix_update:
             if self.split_type == SplitType.UART:
-                if not self._is_target or self.data_pin2:
+                if not self._is_target:
                     self._send_uart(keyboard.matrix_update)
                 else:
                     pass  # explicit pass just for dev sanity...
@@ -367,33 +376,63 @@ class Split(Module):
             self.send_msg(self.uart_header, self._serialize_update(update))
 
     def send_msg(self, msg_type, msg):
+        print('--->  sending msg', bytes([msg_type]), msg)
         msg = bytes([msg_type]) + bytes([len(msg)]) + msg + self._checksum(msg)
         self._uart.write(msg)
 
     def _receive_uart(self, keyboard):
-        if self._uart is not None and self._uart.in_waiting > 0 or self._uart_buffer:
-            if self._uart.in_waiting >= 60:
-                # This is a dirty hack to prevent crashes in unrealistic cases
-                import microcontroller
-
-                microcontroller.reset()
-
-            while self._uart.in_waiting >= 5:
-                msg_type = self._uart.read(1)[0]
-                print('receiving msg', bytes([msg_type]))
-                if msg_type not in self._msg_receivers:
-                    print('WARNING received invalid msg_type', bytes([msg_type]))
-                    continue
-                msg_len = int(self._uart.read(1)[0])
-                print('  msg_len', msg_len)
-                msg = self._uart.read(msg_len)
-                print('  msg', msg)
-                checksum = self._uart.read(1)
-                print('  checksum', checksum)
-                if checksum != self._checksum(msg):
-                    print('WARNING received msg with invalid checksum')
-                    continue
-                self._msg_receivers[msg_type](msg, keyboard)
+        if (not self._uart) or self._uart.in_waiting == 0:
+            return
+        # if self._uart.in_waiting >= 60:
+        #     # This is a dirty hack to prevent crashes in unrealistic cases
+        #     import microcontroller
+        #     microcontroller.reset()
+        if self._uart.in_waiting < 4:
+            # return early. it'll get picked up in next tick
+            return
+        if self._uart_to_read > 0:
+            print('::: continuing to read uart data. msg type: ', bytes([self._uart_receiving_msg_type]), 'buffered: ', len(self._uart_buffer), ' to read: ', self._uart_to_read)
+            msg_type = self._uart_receiving_msg_type
+            msg_len = len(self._uart_buffer) + self._uart_to_read - 1
+            in_waiting = self._uart.in_waiting
+            if in_waiting < self._uart_to_read:
+                self._uart_buffer += self._uart.read(in_waiting)
+                self._uart_to_read -= in_waiting
+                # exit early because not enough bytes left 
+                return
+            msg = self._uart_buffer + self._uart.read(msg_len - len(self._uart_buffer))
+            print('  msg', msg)
+            checksum = self._uart.read(1)
+            print('  checksum', checksum)
+            self._uart_buffer = bytearray([])
+            self._uart_receiving_msg_type = None
+            self._uart_to_read = 0
+        else:
+            print('::: reading uart data :::')
+            msg_type = self._uart.read(1)[0]
+            print('<--- receiving msg', bytes([msg_type]))
+            if msg_type not in self._msg_receivers:
+                print('!!-WARNING-!! received invalid msg_type', bytes([msg_type]))
+                return
+            msg_len = int(self._uart.read(1)[0])
+            print('  msg_len', msg_len)
+            in_waiting = self._uart.in_waiting
+            if in_waiting < msg_len + 1:
+                self._uart_buffer += self._uart.read(in_waiting)
+                self._uart_to_read = msg_len + 1 - in_waiting
+                self._uart_receiving_msg_type = msg_type
+                # exit early because not enough bytes left 
+                return
+            # while self._uart.in_waiting < msg_len + 1:
+            #     print('...waiting for msg_len+1 to be in_waiting')
+            msg = self._uart.read(msg_len)
+            print('  msg', msg)
+            checksum = self._uart.read(1)
+            print('  checksum', checksum)
+        if checksum != self._checksum(msg):
+            print('WARNING received msg with invalid checksum')
+            return
+        self._msg_receivers[msg_type](msg, keyboard)
 
     def add_receiver(self, msg_type, receiver):
         print('----adding', msg_type, receiver, self._msg_receivers)
@@ -402,6 +441,4 @@ class Split(Module):
         self._msg_receivers[msg_type] = receiver
     
     def _receive_msg(self, msg, keyboard):
-        self._uart_buffer.append(self._deserialize_update(msg))
-        if self._uart_buffer:
-            keyboard.secondary_matrix_update = self._uart_buffer.pop(0)
+        keyboard.secondary_matrix_update = self._deserialize_update(msg)

@@ -14,6 +14,7 @@ PMW=$DIR/../kmk/modules/pmw3360.py
 CAPSWORD=$DIR/../kmk/modules/capsword.py
 SPLIT=$DIR/../kmk/modules/split.py
 RGB=$DIR/../kmk/extensions/rgb.py
+KB=$DIR/../kmk/kmk_keyboard.py
 
 cp -X $MAIN_PY $KB_DRIVE
 for m in $RGB_KEYS $PMW $SPLIT; do
@@ -24,6 +25,4 @@ for e in $RGB; do
     echo copying $e
     cp -X $e $KB_DRIVE/kmk/extensions
 done
-# cp -X $RGB_KEYS $KB_DRIVE/kmk/modules
-# cp -X $PMW $KB_DRIVE/kmk/modules
-# cp -X $CAPSWORD $KB_DRIVE/kmk/modules
+# cp -X $KB $KB_DRIVE/kmk

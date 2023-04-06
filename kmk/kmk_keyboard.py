@@ -15,6 +15,7 @@ from kmk.kmktime import ticks_add, ticks_diff
 from kmk.modules import Module
 from kmk.scanners.keypad import MatrixScanner
 from kmk.utils import Debug
+import traceback
 
 debug = Debug(__name__)
 
@@ -239,7 +240,7 @@ class KMKKeyboard:
                     break
             except Exception as err:
                 if debug.enabled:
-                    debug(f'Error in {module}.process_key: {err}')
+                    debug(f'Error in {module}.process_key: {traceback.format_exc(err)}')
 
         if int_coord is not None:
             if is_pressed:
@@ -415,14 +416,14 @@ class KMKKeyboard:
                 module.before_matrix_scan(self)
             except Exception as err:
                 if debug.enabled:
-                    debug(f'Error in {module}.before_matrix_scan: {err}')
+                    debug(f'Error in {module}.before_matrix_scan: {traceback.format_exc(err)}')
 
         for ext in self.extensions:
             try:
                 ext.before_matrix_scan(self.sandbox)
             except Exception as err:
                 if debug.enabled:
-                    debug(f'Error in {ext}.before_matrix_scan: {err}')
+                    debug(f'Error in {ext}.before_matrix_scan: {traceback.format_exc(err)}')
 
     def after_matrix_scan(self) -> None:
         for module in self.modules:
@@ -430,14 +431,14 @@ class KMKKeyboard:
                 module.after_matrix_scan(self)
             except Exception as err:
                 if debug.enabled:
-                    debug(f'Error in {module}.after_matrix_scan: {err}')
+                    debug(f'Error in {module}.after_matrix_scan: {traceback.format_exc(err)}')
 
         for ext in self.extensions:
             try:
                 ext.after_matrix_scan(self.sandbox)
             except Exception as err:
                 if debug.enabled:
-                    debug(f'Error in {ext}.after_matrix_scan: {err}')
+                    debug(f'Error in {ext}.after_matrix_scan: {traceback.format_exc(err)}')
 
     def before_hid_send(self) -> None:
         for module in self.modules:
@@ -445,7 +446,7 @@ class KMKKeyboard:
                 module.before_hid_send(self)
             except Exception as err:
                 if debug.enabled:
-                    debug(f'Error in {module}.before_hid_send: {err}')
+                    debug(f'Error in {module}.before_hid_send: {traceback.format_exc(err)}')
 
         for ext in self.extensions:
             try:
@@ -453,7 +454,7 @@ class KMKKeyboard:
             except Exception as err:
                 if debug.enabled:
                     debug(
-                        f'Error in {ext}.before_hid_send: {err}',
+                        f'Error in {ext}.before_hid_send: {traceback.format_exc(err)}',
                     )
 
     def after_hid_send(self) -> None:
@@ -462,14 +463,14 @@ class KMKKeyboard:
                 module.after_hid_send(self)
             except Exception as err:
                 if debug.enabled:
-                    debug(f'Error in {module}.after_hid_send: {err}')
+                    debug(f'Error in {module}.after_hid_send: {traceback.format_exc(err)}')
 
         for ext in self.extensions:
             try:
                 ext.after_hid_send(self.sandbox)
             except Exception as err:
                 if debug.enabled:
-                    debug(f'Error in {ext}.after_hid_send: {err}')
+                    debug(f'Error in {ext}.after_hid_send: {traceback.format_exc(err)}')
 
     def powersave_enable(self) -> None:
         for module in self.modules:
@@ -477,14 +478,14 @@ class KMKKeyboard:
                 module.on_powersave_enable(self)
             except Exception as err:
                 if debug.enabled:
-                    debug(f'Error in {module}.on_powersave: {err}')
+                    debug(f'Error in {module}.on_powersave: {traceback.format_exc(err)}')
 
         for ext in self.extensions:
             try:
                 ext.on_powersave_enable(self.sandbox)
             except Exception as err:
                 if debug.enabled:
-                    debug(f'Error in {ext}.powersave_enable: {err}')
+                    debug(f'Error in {ext}.powersave_enable: {traceback.format_exc(err)}')
 
     def powersave_disable(self) -> None:
         for module in self.modules:
@@ -492,13 +493,13 @@ class KMKKeyboard:
                 module.on_powersave_disable(self)
             except Exception as err:
                 if debug.enabled:
-                    debug(f'Error in {module}.powersave_disable: {err}')
+                    debug(f'Error in {module}.powersave_disable: {traceback.format_exc(err)}')
         for ext in self.extensions:
             try:
                 ext.on_powersave_disable(self.sandbox)
             except Exception as err:
                 if debug.enabled:
-                    debug(f'Error in {ext}.powersave_disable: {err}')
+                    debug(f'Error in {ext}.powersave_disable: {traceback.format_exc(err)}')
 
     def go(self, hid_type=HIDModes.USB, secondary_hid_type=None, **kwargs) -> None:
         self._init(hid_type=hid_type, secondary_hid_type=secondary_hid_type, **kwargs)
@@ -529,13 +530,13 @@ class KMKKeyboard:
                 module.during_bootup(self)
             except Exception as err:
                 if debug.enabled:
-                    debug(f'Failed to load module {module}: {err}')
+                    debug(f'Failed to load module {module}: {traceback.format_exc(err)}')
         for ext in self.extensions:
             try:
                 ext.during_bootup(self)
             except Exception as err:
                 if debug.enabled:
-                    debug(f'Failed to load extensions {module}: {err}')
+                    debug(f'Failed to load extensions {module}: {traceback.format_exc(err)}')
 
         if debug.enabled:
             debug(f'init: {self}')

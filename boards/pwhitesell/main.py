@@ -173,7 +173,7 @@ RCTL = KC.RCTL
 LCTL = KC.HT(KC.OS(KC.LCTL, tap_time=None), KC.LCTL)
 LCLK = KC.MB_LMB
 # CCLK = KC.LCMD(KC.MB_LMB)
-CCLK = NEXT = simple_key_sequence((
+CCLK = simple_key_sequence((
   KC.LCMD(no_release=True),
   KC.MACRO_SLEEP_MS(30),
   KC.MB_LMB,
