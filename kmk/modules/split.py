@@ -137,7 +137,8 @@ class Split(Module):
                         tx=self.data_pin2,
                         rx=self.data_pin,
                         timeout=self._uart_interval,
-                        receiver_buffer_size=2048, baudrate=115200,
+                        receiver_buffer_size=2048,
+                        baudrate=115200,
                     )
             else:
                 print('  tx is pin1')
