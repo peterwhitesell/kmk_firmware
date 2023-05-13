@@ -159,7 +159,7 @@ __X_ = KC.X
 __Y_ = KC.Y
 __Z_ = KC.Z
 SPCE = KC.SPACE
-BKSP = KC.BSPC
+✂__← = KC.BSPC
 QUOT = KC.QUOT
 SCLN = KC.SCLN
 EXLM = KC.EXLM
@@ -190,16 +190,22 @@ __↑_ = KC.UP
 __↓_ = KC.DOWN
 __←_ = KC.LEFT
 __→_ = KC.RIGHT
+_↑↑_ = KC.PGUP # KC.LALT(KC.UP)
+_↓↓_ = KC.PGDN # KC.LALT(KC.DOWN)
+_←←_ = KC.LALT(KC.LEFT)
+_→→_ = KC.LALT(KC.RIGHT)
+↑↑↑_ = KC.LCMD(KC.UP)
+↓↓↓_ = KC.LCMD(KC.DOWN)
+←←←_ = KC.LCMD(KC.LEFT)
+→→→_ = KC.LCMD(KC.RIGHT)
 PGUP = KC.PGUP
 PGDN = KC.PGDN
-HOME = KC.HOME
-_END = KC.END
-BKWD = KC.LALT(KC.LEFT)
-FWWD = KC.LALT(KC.RIGHT)
-BKLN = KC.LCMD(KC.LEFT)
-FWLN = KC.LCMD(KC.RIGHT)
-DLWD = KC.LALT(KC.BKSP)
-DLLN = KC.LCMD(KC.BKSP)
+✂__← = KC.BKSP
+✂__→ = KC.DEL
+✂_←← = KC.LALT(KC.BKSP)
+✂_→→ = KC.LALT(KC.DEL)
+✂←←← = KC.LCMD(KC.BKSP)
+✂→→→ = KC.LCMD(KC.DEL)
 _EQL = KC.EQL
 MINS = KC.MINUS
 UNDS = KC.UNDS
@@ -226,7 +232,6 @@ RLOD = KC.LCMD(KC.R)
 NTAB = KC.LCMD(KC.T)
 TICK = KC.GRV
 ESCP = KC.ESC
-DELT = KC.DEL
 EMOJ = KC.LCMD(KC.LCTL(KC.SPACE))
 _URL = KC.LCMD(KC.L)
 LNCH = KC.LCMD(KC.SPACE)
@@ -420,7 +425,6 @@ if side == SplitSide.RIGHT:
       SPCE: KeyColors.Space,
       SPC1: KeyColors.SPC1,
       SP_1: KeyColors.SP_1,
-      BKSP: KeyColors.Danger,
       BSP2: KeyColors.BackSpace_L2,
       QUOT: KeyColors.Punctuation,
       SCLN: KeyColors.Punctuation,
@@ -445,16 +449,22 @@ if side == SplitSide.RIGHT:
       __↓_: KeyColors.Nav,
       __←_: KeyColors.Nav,
       __→_: KeyColors.Nav,
+      _↑↑_: KeyColors.Nav,
+      _↓↓_: KeyColors.Nav,
+      _←←_: KeyColors.Nav,
+      _→→_: KeyColors.Nav,
+      ↑↑↑_: KeyColors.Nav,
+      ↓↓↓_: KeyColors.Nav,
+      ←←←_: KeyColors.Nav,
+      →→→_: KeyColors.Nav,
+      ✂__←: KeyColors.Danger,
+      ✂__→: KeyColors.Danger,
+      ✂_←←: KeyColors.Danger,
+      ✂_→→: KeyColors.Danger,
+      ✂←←←: KeyColors.Danger,
+      ✂→→→: KeyColors.Danger,
       PGUP: KeyColors.Nav,
       PGDN: KeyColors.Nav,
-      HOME: KeyColors.Nav,
-      _END: KeyColors.Nav,
-      BKWD: KeyColors.Nav,
-      FWWD: KeyColors.Nav,
-      BKLN: KeyColors.Nav,
-      FWLN: KeyColors.Nav,
-      DLWD: KeyColors.Danger,
-      DLLN: KeyColors.Danger,
       _EQL: KeyColors.Math,
       MINS: KeyColors.Math,
       UNDS: KeyColors.Punctuation,
@@ -481,7 +491,6 @@ if side == SplitSide.RIGHT:
       NTAB: KeyColors.Browse,
       TICK: KeyColors.Punctuation,
       ESCP: KeyColors.Danger,
-      DELT: KeyColors.Danger,
       EMOJ: KeyColors.Edit,
       _URL: KeyColors.Browse,
       LNCH: KeyColors.Window,
@@ -511,19 +520,22 @@ keyboard.keymap = [[
                              LSFT, LCMD,          RCLK,       _L2_,
                                 LSFT, LCTL,              LCLK
 ], [
-  ↓___, ESCP, __7_, __8_, __9_, LCBR,                   RCBR, VDSC, __↑_, _🚫_, PTSC, TICK,
-  ↓___, __0_, __4_, __5_, __6_, LPRN,                   RPRN, __←_, EXLM, __→_, _🚫_, CENT,
+  # ↓___, ESCP, __7_, __8_, __9_, LCBR,                   RCBR, VDSC, __↑_, _🚫_, PTSC, TICK,
+  # ↓___, __0_, __4_, __5_, __6_, LPRN,                   RPRN, __←_, EXLM, __→_, _🚫_, CENT,
+  ↓___, ESCP, __7_, __8_, __9_, →→→_,                   ←←←_, _←←_, __↑_, _↑↑_, _→→_, TICK,
+  ↓___, __0_, __4_, __5_, __6_, LPRN,                   RPRN, __←_, __↓_, _↓↓_, __→_, CENT,
   ↓___, _🚫_, __1_, __2_, __3_, LBRC,                   RBRC, MINS, _EQL, UNDS, BSLS, ↓___,
               ↓___, ↓___,                                           ↓___, ↓___,
-                          DELT, ENTR,                         __↓_,
+                          ✂__→, ENTR,                         EXLM,
                              LSFT, ↓___,          ↓___,       EMOJ,
                              LSFT, ↓___,                RSFT,
 ], [
-  CTAB, ESCP, CLOS, _🚫_, RLOD, NTAB,                   MSSN, _URL, PGUP, OPEN, PRNT, APPN,
-  ↓___, _ALL, SAVE, MTSL, FIND, LCLK,                   BKLN, BKWD, SKSL, FWWD, FWLN, ↓___,
+  # TODO selection and clipboard layer space+shift
+  CTAB, ESCP, CLOS, SKSL, RLOD, NTAB,                   MSSN, _URL, _🚫_, OPEN, PRNT, APPN,
+  ↓___, _ALL, SAVE, MTSL, FIND, LCLK,                   ✂←←←, ✂_←←, ✂__←, ✂__→, ✂_→→, ✂→→→,
   ↓___, UNDO, _CUT, COPY, PAST, RCLK,                   NEW_, _🚫_, _🚫_, _🚫_, CMNT, ↓___,
               ↓___, ↓___,                                           ↓___, ↓___,
-                          DLWD, ↓___,                         PGDN,
+                          ✂_←←, ↓___,                         PGDN,
                              LSFT, ↓___,          ↓___,       LNCH,
                              LSFT, ↓___,                RSFT,
 ]]
