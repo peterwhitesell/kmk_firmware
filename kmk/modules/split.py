@@ -9,6 +9,10 @@ from storage import getmount
 from kmk.hid import HIDModes
 from kmk.kmktime import check_deadline
 from kmk.modules import Module
+import traceback
+
+from kmk.utils import Debug
+debug = Debug(__name__)
 
 
 class SplitSide:
@@ -70,8 +74,9 @@ class Split(Module):
                 self.BLERadio = BLERadio
                 self.ProvideServicesAdvertisement = ProvideServicesAdvertisement
                 self.UARTService = UARTService
-            except ImportError:
-                print('BLE Import error')
+            except ImportError as e:
+                print(e)
+                traceback.print_exception(e)
                 return  # BLE isn't supported on this platform
             self._ble_last_scan = ticks_ms() - 5000
             self._connection_count = 0
@@ -202,8 +207,7 @@ class Split(Module):
             elif self.split_type == SplitType.ONEWIRE:
                 pass  # Protocol needs written
             else:
-                print('Unexpected case in after_matrix_scan')
-
+                print('WARNING Unexpected case in after_matrix_scan')
         return
 
     def before_hid_send(self, keyboard):
@@ -276,21 +280,18 @@ class Split(Module):
                     break
 
         if not self._uart:
-            if self._debug_enabled:
-                print('Scanning')
+            debug('Initiating BLE scan')
             self._ble.stop_scan()
             for adv in self._ble.start_scan(
                 self.ProvideServicesAdvertisement, timeout=20
             ):
-                if self._debug_enabled:
-                    print('Scanning')
+                debug('Scanning BLE', adv)
                 if self.UARTService in adv.services and adv.rssi > -70:
                     self._uart_connection = self._ble.connect(adv)
                     self._uart_connection.connection_interval = 11.25
                     self._uart = self._uart_connection[self.UARTService]
                     self._ble.stop_scan()
-                    if self._debug_enabled:
-                        print('Scan complete')
+                    debug('BLE Scan complete', adv)
                     break
         self._ble.stop_scan()
 
@@ -299,8 +300,7 @@ class Split(Module):
         # Give previous advertising some time to complete
         if self._advertising:
             if self._check_if_split_connected():
-                if self._debug_enabled:
-                    print('Advertising complete')
+                debug('Advertising complete')
                 self._ble.stop_advertising()
                 self._advertising = False
                 return
@@ -308,12 +308,10 @@ class Split(Module):
             if not self.ble_rescan_timer():
                 return
 
-            if self._debug_enabled:
-                print('Advertising not answered')
+            debug('Advertising not answered')
 
         self._ble.stop_advertising()
-        if self._debug_enabled:
-            print('Advertising')
+        debug('Advertising')
         # Uart must not change on this connection if reconnecting
         if not self._uart:
             self._uart = self.UARTService()
@@ -333,29 +331,28 @@ class Split(Module):
 
     def _serialize_update(self, update):
         buffer = bytearray(2)
-        print('-----serialize_update', update)
+        debug('serialize_update', update)
         buffer[0] = update.key_number
         buffer[1] = update.pressed
         return buffer
 
     def _deserialize_update(self, update):
         kevent = KeyEvent(key_number=update[0], pressed=update[1])
-        print('----deserialize-update', kevent, update, update.decode())
+        debug('deserialize-update', kevent, update, update.decode())
         return kevent
 
     def _send_ble(self, update):
         if self._uart:
             try:
                 self._uart.write(self._serialize_update(update))
-            except OSError:
+            except OSError as e:
+                print('Connection error:')
+                print(e)
+                traceback.print_exception(e)
                 try:
                     self._uart.disconnect()
-                except:  # noqa: E722
-                    if self._debug_enabled:
-                        print('UART disconnect failed')
-
-                if self._debug_enabled:
-                    print('Connection error')
+                except e:  # noqa: E722
+                    print('UART disconnect failed', e)
                 self._uart_connection = None
                 self._uart = None
 
@@ -377,7 +374,7 @@ class Split(Module):
             self.send_msg(self.uart_header, self._serialize_update(update))
 
     def send_msg(self, msg_type, msg):
-        print('--->  sending msg', bytes([msg_type]), msg)
+        debug('sending msg --->', bytes([msg_type]), msg)
         msg = bytes([msg_type]) + bytes([len(msg)]) + msg + self._checksum(msg)
         self._uart.write(msg)
 
@@ -392,7 +389,7 @@ class Split(Module):
             # return early. it'll get picked up in next tick
             return
         if self._uart_to_read > 0:
-            print('::: continuing to read uart data. msg type: ', bytes([self._uart_receiving_msg_type]), 'buffered: ', len(self._uart_buffer), ' to read: ', self._uart_to_read)
+            debug('continuing to read uart data. msg type: ', bytes([self._uart_receiving_msg_type]), 'buffered: ', len(self._uart_buffer), ' to read: ', self._uart_to_read)
             msg_type = self._uart_receiving_msg_type
             msg_len = len(self._uart_buffer) + self._uart_to_read - 1
             in_waiting = self._uart.in_waiting
@@ -402,21 +399,21 @@ class Split(Module):
                 # exit early because not enough bytes left 
                 return
             msg = self._uart_buffer + self._uart.read(msg_len - len(self._uart_buffer))
-            print('  msg', msg)
+            debug('    msg', msg)
             checksum = self._uart.read(1)
-            print('  checksum', checksum)
+            debug('    checksum', checksum)
             self._uart_buffer = bytearray([])
             self._uart_receiving_msg_type = None
             self._uart_to_read = 0
         else:
-            print('::: reading uart data :::')
+            debug('reading uart data')
             msg_type = self._uart.read(1)[0]
-            print('<--- receiving msg', bytes([msg_type]))
+            debug('<--- receiving msg', bytes([msg_type]))
             if msg_type not in self._msg_receivers:
-                print('!!-WARNING-!! received invalid msg_type', bytes([msg_type]))
+                print('WARNING received invalid msg_type', bytes([msg_type]))
                 return
             msg_len = int(self._uart.read(1)[0])
-            print('  msg_len', msg_len)
+            debug('    msg_len', msg_len)
             in_waiting = self._uart.in_waiting
             if in_waiting < msg_len + 1:
                 self._uart_buffer += self._uart.read(in_waiting)
@@ -427,16 +424,16 @@ class Split(Module):
             # while self._uart.in_waiting < msg_len + 1:
             #     print('...waiting for msg_len+1 to be in_waiting')
             msg = self._uart.read(msg_len)
-            print('  msg', msg)
+            debug('    msg', msg)
             checksum = self._uart.read(1)
-            print('  checksum', checksum)
+            debug('    checksum', checksum)
         if checksum != self._checksum(msg):
             print('WARNING received msg with invalid checksum')
             return
         self._msg_receivers[msg_type](msg, keyboard)
 
     def add_receiver(self, msg_type, receiver):
-        print('----adding', msg_type, receiver, self._msg_receivers)
+        debug('adding receiver', msg_type, receiver, self._msg_receivers)
         if msg_type in self._msg_receivers:
             raise KeyError("The chosen msg_type is already in use. You must use a unique msg_type")
         self._msg_receivers[msg_type] = receiver

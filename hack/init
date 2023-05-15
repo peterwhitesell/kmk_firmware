@@ -6,8 +6,14 @@ if [[ "$SIDE" != "L" ]] && [[ "$SIDE" != "R" ]]; then
     exit 1
 fi
 
+KB=$2
+
+if [[ "$KB" == "" ]]; then
+    KB=KB
+fi
+
 DIR="$(dirname ${BASH_SOURCE[0]})"
-KB_DRIVE=/Volumes/KB_$SIDE
+KB_DRIVE=/Volumes/${KB}_${SIDE}
 CIRCUITPY=$DIR/adafruit-circuitpython-raspberry_pi_pico-en_US-8.0.3.uf2
 KMK=$DIR/../kmk
 TB=$DIR/../../Dactyl5/src/modules/*

@@ -5,7 +5,9 @@ from micropython import const
 from storage import getmount
 
 from kmk.keys import FIRST_KMK_INTERNAL_KEY, ConsumerKey, ModifierKey, MouseKey
-from kmk.utils import clamp
+from kmk.utils import clamp, Debug
+
+debug = Debug(__name__)
 
 try:
     from adafruit_ble import BLERadio
@@ -45,7 +47,7 @@ class HIDUsagePage:
 
 HID_REPORT_SIZES = {
     HIDReportTypes.KEYBOARD: 8,
-    HIDReportTypes.MOUSE: 4,
+    HIDReportTypes.MOUSE: 5,
     HIDReportTypes.CONSUMER: 2,
     HIDReportTypes.SYSCONTROL: 8,  # TODO find the correct value for this
 }
@@ -259,13 +261,13 @@ class USBHID(AbstractHID):
     def hid_send(self, evt):
         if not supervisor.runtime.usb_connected:
             return
-
         # int, can be looked up in HIDReportTypes
         reporting_device_const = evt[0]
-
-        return self.devices[reporting_device_const].send_report(
-            evt[1 : HID_REPORT_SIZES[reporting_device_const] + 1]
-        )
+        report = evt[1 : HID_REPORT_SIZES[reporting_device_const] + 1]
+        debug('reporting:')
+        debug('    device: ', evt[0])
+        debug('    report: ', report)
+        return self.devices[reporting_device_const].send_report(report)
 
 
 class BLEHID(AbstractHID):

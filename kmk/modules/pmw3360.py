@@ -2,6 +2,7 @@ import busio
 import digitalio
 import microcontroller
 from kmk.hid import HID_REPORT_SIZES, HIDReportTypes
+from kmk.utils import Debug
 
 import time
 import math
@@ -9,6 +10,9 @@ import math
 from kmk.modules import Module
 from kmk.modules.pmw3360_firmware import firmware
 from kmk.keys import KC, AX
+
+from kmk.utils import Debug
+debug = Debug(__name__)
 
 class REG:
     Product_ID = 0x0
@@ -37,8 +41,7 @@ class PMW3360(Module):
     DIR_WRITE = 0x80
     DIR_READ = 0x7F
 
-    def __init__(self, cs, sclk, miso, mosi, invert_x=False, invert_y=False, flip_xy=False, on_move=lambda keyboard: None):
-        print("In pmw3360 __init__ again")
+    def __init__(self, cs, sclk, miso, mosi, invert_x=False, invert_y=False, flip_xy=False, lift_config=0x04, on_move=lambda keyboard: None):
         self.cs = digitalio.DigitalInOut(cs)
         self.cs.direction = digitalio.Direction.OUTPUT
         self.spi = busio.SPI(clock=sclk, MOSI=mosi, MISO=miso)
@@ -48,8 +51,11 @@ class PMW3360(Module):
         self.scroll_control = False
         self.volume_control = False
         self.v_scroll_ctr = 0
+        self.h_scroll_ctr = 0
         self.scroll_res = 10
         self.on_move = on_move
+        self.lift_config = lift_config
+        debug(f'lift_config: {lift_config}')
 
     def start_v_scroll(self, enabled=True):
         self.scroll_control = enabled
@@ -95,7 +101,7 @@ class PMW3360(Module):
         return result[0]
 
     def pwm3360_upload_srom(self):
-        print("Uploading pmw3360 FW")
+        debug("Uploading pmw3360 FW")
         self.pmw3360_write(REG.Config2, 0x0)
         self.pmw3360_write(REG.SROM_Enable, 0x1D)
         time.sleep(0.01)
@@ -111,9 +117,9 @@ class PMW3360(Module):
                 self.spi.write(bytes([b]))
                 microcontroller.delay_us(15)
         except Error:
-            print("Received error on firmware write")
+            debug("Received error on firmware write")
         finally:
-            print("Firmware done")
+            debug("Firmware done")
             microcontroller.delay_us(200)
             self.spi.unlock()
             self.pmw3360_stop()
@@ -145,8 +151,8 @@ class PMW3360(Module):
         return result
 
     def during_bootup(self, keyboard):
-        print("firmware during_bootup() called")
-        print("Debugging not enabled")
+        debug("firmware during_bootup() called")
+        debug("Debugging not enabled")
         self.pmw3360_start()
         microcontroller.delay_us(40)
         self.pmw3360_stop()
@@ -163,16 +169,16 @@ class PMW3360(Module):
         self.pmw3360_write(REG.Config1, 0x06)  # set x/y resolution to 700 cpi
         # self.pmw3360_write(REG.Config2, 0)  # set to wired mouse mode
         self.pmw3360_write(REG.Angle_Tune, -25)  # set to wired mouse mode
-        self.pmw3360_write(REG.Lift_Config, 0x04)  # set to wired mouse mode
+        self.pmw3360_write(REG.Lift_Config, self.lift_config)  # set to wired mouse mode
         if keyboard.debug_enabled:
-            print('PMW3360 Product ID ', hex(self.pmw3360_read(REG.Product_ID)))
-            print('PMW3360 Revision ID ', hex(self.pmw3360_read(REG.Revision_ID)))
+            debug('PMW3360 Product ID ', hex(self.pmw3360_read(REG.Product_ID)))
+            debug('PMW3360 Revision ID ', hex(self.pmw3360_read(REG.Revision_ID)))
             if self.pmw3360_read(REG.Observation) & 0x40:
-                print('PMW3360: Sensor is running SROM')
-                print('PMW3360: SROM ID: ', hex(self.pmw3360_read(REG.SROM_ID)))
+                debug('PMW3360: Sensor is running SROM')
+                debug('PMW3360: SROM ID: ', hex(self.pmw3360_read(REG.SROM_ID)))
             else:
-                print('PMW3360: Sensor is not running SROM!')
-        print("Finished with firmware download")
+                debug('PMW3360: Sensor is not running SROM!')
+        debug("Finished with firmware download")
 
     def before_matrix_scan(self, keyboard):
         return
@@ -187,7 +193,7 @@ class PMW3360(Module):
         motion = self.pmw3360_read_motion()
         if motion[0] & 0x80:
             if motion[0] & 0x07:
-                print("Motion weirdness")
+                debug("Motion weirdness")
                 self.pmw3360_write(REG.Motion_Burst, 0)
                 return
             if self.flip_xy:
@@ -204,7 +210,7 @@ class PMW3360(Module):
                 return
             # print('Delta: ', delta_x, ' ', delta_y)
             if self.scroll_control:
-                #   vertical scroll
+                # vertical scroll
                 self.v_scroll_ctr += delta_y
                 if self.v_scroll_ctr >= self.scroll_res:
                     AX.W.move(keyboard, -1)
@@ -212,6 +218,14 @@ class PMW3360(Module):
                 if self.v_scroll_ctr <= -self.scroll_res:
                     AX.W.move(keyboard, 1)
                     self.v_scroll_ctr = 0
+                # horizontal scroll
+                self.h_scroll_ctr += delta_x
+                if self.h_scroll_ctr >= self.scroll_res:
+                    AX.P.move(keyboard, 1)
+                    self.h_scroll_ctr = 0
+                if self.h_scroll_ctr <= -self.scroll_res:
+                    AX.P.move(keyboard, -1)
+                    self.h_scroll_ctr = 0
             elif self.volume_control:
                 self.v_scroll_ctr += 1
                 if self.v_scroll_ctr >= self.scroll_res:
@@ -234,6 +248,7 @@ class PMW3360(Module):
     def on_powersave_disable(self, keyboard):
         return
     def _scale_mouse_move(self, val):
+        return val
         sign = math.copysign(1, val)
         sqrd = abs(val**1.5)
         scaled = sqrd // 4

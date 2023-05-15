@@ -53,6 +53,7 @@ class Axis:
 
 class AX:
     W = Axis(2)
+    P = Axis(3)
     X = Axis(0)
     Y = Axis(1)
 

@@ -1,0 +1,28 @@
+#!/bin/bash
+
+SIDE=$1
+if [[ "$SIDE" != "L" ]] && [[ "$SIDE" != "R" ]]; then
+    echo "Usage: hack/init L|R"
+    exit 1
+fi
+
+DIR="$(dirname ${BASH_SOURCE[0]})"
+KB_DRIVE=/Volumes/PW_$SIDE
+MAIN_PY=$DIR/../boards/pwhitesell/tb.py
+RGB_KEYS=$DIR/../kmk/modules/rgbkeys.py
+PMW=$DIR/../kmk/modules/pmw3360.py
+CAPSWORD=$DIR/../kmk/modules/capsword.py
+SPLIT=$DIR/../kmk/modules/split.py
+RGB=$DIR/../kmk/extensions/rgb.py
+KB=$DIR/../kmk/kmk_keyboard.py
+
+cp -X $MAIN_PY $KB_DRIVE/main.py
+for m in $RGB_KEYS $PMW $SPLIT; do
+    echo copying $m to $KB_DRIVE/kmk/modules
+    cp -X $m $KB_DRIVE/kmk/modules
+done
+for e in $RGB; do
+    echo copying $e
+    cp -X $e $KB_DRIVE/kmk/extensions
+done
+# cp -X $KB $KB_DRIVE/kmk

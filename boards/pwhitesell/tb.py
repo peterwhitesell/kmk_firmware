@@ -1,6 +1,8 @@
-print("Starting split mode ⌨️~⌨️")
+print("Starting TB - split mode ⌨️~⌨️")
 
 import board
+# print(dir(board))
+# ['__class__', '__name__', 'A0', 'A1', 'A2', 'A3', 'D0', 'D1', 'D10', 'D11', 'D12', 'D13', 'D24', 'D25', 'D4', 'D5', 'D6', 'D9', 'I2C', 'LED', 'MISO', 'MOSI', 'NEOPIXEL', 'RX', 'SCK', 'SCL', 'SDA', 'SPI', 'STEMMA_I2C', 'TX', 'UART', 'board_id']
 
 from kmk.kmk_keyboard import KMKKeyboard
 from kmk.keys import KC
@@ -23,26 +25,22 @@ import traceback
 side = SplitSide.RIGHT if str(getmount('/').label)[-1] == 'R' else SplitSide.LEFT
 
 print("split side is:", side)
+rgb_pin = board.D11
 if side == SplitSide.RIGHT:
   print("~⌨️  RIGHT")
-  # rgb_pin = board.GP17
-  rgb_pin = board.GP8
   rgb_pixels = 24
 else:
   print("LEFT  ⌨~")
-  rgb_pin = board.A3
-  rgb_pixels = 26
+  rgb_pixels = 24
 
 keyboard = KMKKeyboard()
 keyboard.debug_enabled = True
-Debug.disable('kmk.kmk_keyboard', 'kmk.modules.split', 'kmk.modules.holdtap', 'kmk.hid')
 
 keyboard.modules.append(StickyMod())
 keyboard.modules.append(MouseKeys())
 keyboard.modules.append(HoldTap())
 
 td = TapDance()
-# td.tap_time = 750
 keyboard.modules.append(td)
 keyboard.modules.append(OneShot())
 layers = Layers()
@@ -51,43 +49,36 @@ keyboard.modules.append(layers)
 capsWord = CapsWord(timeout=5000)
 keyboard.modules.append(capsWord)
 keyboard.diode_orientation = DiodeOrientation.ROW2COL
-if side == SplitSide.RIGHT:
-  keyboard.col_pins = (
-    board.GP2, board.GP3, board.GP4, board.GP5, board.GP6, board.GP7
-  )
-  keyboard.row_pins = (
-    # board.GP8,
-    board.GP9,
-    board.A0,
-    board.A1,
-    board.A2,
-    board.A3,
-  )
-else:
-  keyboard.col_pins = (
-    board.GP7, board.GP6, board.GP5, board.GP4, board.GP3, board.GP2
-  )
-  keyboard.row_pins = (
-    # boafrd.GP21,
-    board.GP23,
-    board.GP20,
-    board.GP22,
-    board.A0,
-    board.A1
-  )
+keyboard.col_pins = (
+  board.SDA, board.SCL, board.D5, board.D6, board.D9, board.D10,
+)
+keyboard.row_pins = (
+  board.D24,
+  board.A3,
+  board.A2,
+  board.A1,
+  board.A0,
+)
 
 keyboard.coord_mapping = [
      0,    1,    2,    3,    4,    5,                    30,   31,   32,   33,   34,   35,
      6,    7,    8,    9,   10,   11,                    36,   37,   38,   39,   40,   41,
     12,   13,   14,   15,   16,   17,                    42,   43,   44,   45,   46,   47,
-                20,    21,                                           50,   51,
-                            22,   23,                          49,
-                               28,   29,             48,        55,
-                                  26,  27,               54,
+                          21,   22,   23,             48,   49,   50,
+                          27,   28,   29,             54,   55,   56,
 ]
 
 if side == SplitSide.RIGHT:
-  pmw3360 = PMW3360(cs=board.GP21, miso=board.GP20, mosi=board.GP23, sclk=board.GP22, invert_x=True, invert_y=True, flip_xy=True)
+  pmw3360 = PMW3360(
+    cs=board.RX,      # SS Yellow
+    miso=board.MISO,  # MI Green
+    mosi=board.MOSI,  # MO Brown
+    sclk=board.SCK,   # SC White
+    lift_config=0x04,
+    invert_x=True,
+    invert_y=True,
+    flip_xy=True,
+  )
   keyboard.modules.append(pmw3360)
 
 split = Split(
@@ -98,16 +89,18 @@ split = Split(
   split_flip=False,
   # use_pio=True,
   use_pio=False,
-  data_pin=board.GP1,
-  data_pin2=board.GP0,
+  data_pin=board.D13,
+  data_pin2=board.D12,
 )
 keyboard.modules.append(split)
 
 _L1_ = KC.MO(1)
+_L2_ = KC.MO(2)
+_L3_ = KC.MO(3)
+_L4_ = KC.MO(4)
 SP_1 = KC.HT(KC.SPACE, KC.MO(1), tap_time=200)
 SPC1 = KC.HT(KC.SPACE, KC.MO(1), tap_time=200)
 BSP2 = KC.HT(KC.BSPC, KC.MO(2), tap_time=200)
-_L2_ = KC.MO(2)
 _🚫_ = KC.NO
 ↓___ = KC.TRNS
 __1_ = KC.N1
@@ -173,7 +166,6 @@ LALT = KC.HT(KC.OS(KC.LALT, tap_time=None), KC.LALT)
 RCTL = KC.RCTL
 LCTL = KC.HT(KC.OS(KC.LCTL, tap_time=None), KC.LCTL)
 LCLK = KC.MB_LMB
-# CCLK = KC.LCMD(KC.MB_LMB)
 CCLK = simple_key_sequence((
   KC.LCMD(no_release=True),
   KC.MACRO_SLEEP_MS(30),
@@ -191,14 +183,26 @@ __↑_ = KC.UP
 __↓_ = KC.DOWN
 __←_ = KC.LEFT
 __→_ = KC.RIGHT
-_↑↑_ = KC.PGUP # KC.LALT(KC.UP)
-_↓↓_ = KC.PGDN # KC.LALT(KC.DOWN)
+_↑↑_ = KC.PGUP
+_↓↓_ = KC.PGDN
 _←←_ = KC.LALT(KC.LEFT)
 _→→_ = KC.LALT(KC.RIGHT)
 ↑↑↑_ = KC.LCMD(KC.UP)
 ↓↓↓_ = KC.LCMD(KC.DOWN)
 ←←←_ = KC.LCMD(KC.LEFT)
 →→→_ = KC.LCMD(KC.RIGHT)
+S_↑_ = KC.LSFT(KC.UP)
+S_↓_ = KC.LSFT(KC.DOWN)
+S_←_ = KC.LSFT(KC.LEFT)
+S_→_ = KC.LSFT(KC.RIGHT)
+S↑↑_ = KC.LSFT(KC.PGUP)
+S↓↓_ = KC.LSFT(KC.PGDN)
+S←←_ = KC.LSFT(KC.LALT(KC.LEFT))
+S→→_ = KC.LSFT(KC.LALT(KC.RIGHT))
+S↑↑↑ = KC.LSFT(KC.LCMD(KC.UP))
+S↓↓↓ = KC.LSFT(KC.LCMD(KC.DOWN))
+S←←← = KC.LSFT(KC.LCMD(KC.LEFT))
+S→→→ = KC.LSFT(KC.LCMD(KC.RIGHT))
 PGUP = KC.PGUP
 PGDN = KC.PGDN
 ✂__← = KC.BKSP
@@ -255,15 +259,13 @@ class WordsTimeout():
       key.after_press_handler(self.on_word_key)
   def on_word_key(self, key, keyboard, *args):
     if self.timeout is None:
-      self.keyboard.keymap[0][41] = SPCE
-      self.keyboard.keymap[0][42] = SPCE
+      self.keyboard.keymap[0][43] = SPCE
     if self.timeout is not None:
       self.keyboard.cancel_timeout(self.timeout)
     self.timeout = self.keyboard.set_timeout(300, self.release)
     return key
   def release(self):
-    self.keyboard.keymap[0][41] = SP_1
-    self.keyboard.keymap[0][42] = SPC1
+    self.keyboard.keymap[0][43] = SP_1
     self.timeout = None
 
 wt = WordsTimeout(
@@ -285,7 +287,7 @@ class MouseLayer():
     return key
   def on_mouse_move(self, keyboard):
     if self.timeout is None:
-      self.keyboard.keymap[0][17] = CCLK
+      self.keyboard.keymap[0][28] = CCLK
       self.keyboard.keymap[0][16] = LCLK
       self.keyboard.keymap[0][15] = RCLK
       self.keyboard.keymap[0][19] = LCLK
@@ -295,26 +297,26 @@ class MouseLayer():
       self.keyboard.cancel_timeout(self.timeout)
     self.timeout = self.keyboard.set_timeout(300, self.release)
   def release(self):
-    self.keyboard.keymap[0][17] = __G_
+    self.keyboard.keymap[0][28] = __G_
     self.keyboard.keymap[0][16] = __F_
     self.keyboard.keymap[0][15] = __D_
     self.keyboard.keymap[0][19] = __J_
-    self.keyboard.keymap[0][20] = __K_
+    self.keyboard.keymap[0][20] = __V_
     self.timeout = None
     self.refresh_keys()
   def refresh_keys(self):
     rgbkeys_module = next(x for x in self.keyboard.modules if type(x) is RGBKeys)
     if rgbkeys_module is None:
       return
-    for i in [15, 16, 19, 20]:
+    for i in [15, 16, 28, 19, 20]:
       try:
         rgbkeys_module.refresh_key(i, self.keyboard)
       except Exception as e:
         print(e)
         traceback.print_exception(e)
 
-if side == SplitSide.RIGHT:
-  ml = MouseLayer(keyboard, [LCLK, RCLK])
+# if side == SplitSide.RIGHT:
+#   ml = MouseLayer(keyboard, [LCLK, RCLK])
 
 def ball_scroll_enable(key, keyboard, *args):
     pmw3360.start_v_scroll()
@@ -325,8 +327,10 @@ def ball_scroll_disable(key, keyboard, *args):
     return True
 
 if side == SplitSide.RIGHT:
-  SP_1.before_press_handler(ball_scroll_enable)
-  SP_1.before_release_handler(ball_scroll_disable)
+  BSP2.before_press_handler(ball_scroll_enable)
+  BSP2.before_release_handler(ball_scroll_disable)
+  _L4_.before_press_handler(ball_scroll_enable)
+  _L4_.before_release_handler(ball_scroll_disable)
 
 rgb = RGB(
   animation_mode=AnimationModes.STATIC_STANDBY,
@@ -362,28 +366,19 @@ class KeyColors:
 
 if side == SplitSide.RIGHT:
   rgbkeys = RGBKeys(
-    # coord_mapping=[
-    #     5,    4,    3,    2,    1,    0,                     26,   27,   28,   29,   30,   31,
-    #     6,    7,    8,    9,   10,   11,                     37,   36,   35,   34,   33,   32,
-    #   17,   16,   15,   14,   13,   12,                     38,   39,   40,   41,   42,   43,
-    #                 18,   19,                                             45,   44,
-    #                             20,   21,                           46,
-    #                               23,   22,            47,         49,
-    #                               24,   25,                  48,
-    # ],
     coord_mapping=[
-        29,    28,    27,   26,   25,   24,                      0,    1,    2,    3,    4,    5,
-        30,    31,    32,   33,   34,   35,                     11,   10,    9,    8,    7,    6,
-        41,    40,    39,   38,   37,   36,                     12,   13,    14,   15,   16,   17,
-                    42,   43,                                             19,   18,
-                                44,   45,                           20,
-                                  47,   46,            21,         23,
-                                  48,   49,                  22,
+        26,    27,    32,   33,   42,   43,                      2,    3,    8,    9,   14,   15,
+        25,    28,    31,   34,   41,   44,                      1,    4,    7,   10,   13,   16,
+        24,    29,    30,   35,   40,   45,                      0,    5,    6,   11,   12,   17,
+                                36,   39,   46,             18,   20,   22,
+                                37,   38,   47,             19,   21,   23,
     ],
     key_colors = {
       _🚫_: KeyColors.Off,
       _L1_: KeyColors.Mod,
       _L2_: KeyColors.Mod,
+      _L3_: KeyColors.Mod,
+      _L4_: KeyColors.Mod,
       __1_: KeyColors.Number,
       __2_: KeyColors.Number,
       __3_: KeyColors.Number,
@@ -458,6 +453,18 @@ if side == SplitSide.RIGHT:
       ↓↓↓_: KeyColors.Nav,
       ←←←_: KeyColors.Nav,
       →→→_: KeyColors.Nav,
+      S_↑_: KeyColors.Nav,
+      S_↓_: KeyColors.Nav,
+      S_←_: KeyColors.Nav,
+      S_→_: KeyColors.Nav,
+      S↑↑_: KeyColors.Nav,
+      S↓↓_: KeyColors.Nav,
+      S←←_: KeyColors.Nav,
+      S→→_: KeyColors.Nav,
+      S↑↑↑: KeyColors.Nav,
+      S↓↓↓: KeyColors.Nav,
+      S←←←: KeyColors.Nav,
+      S→→→: KeyColors.Nav,
       ✂__←: KeyColors.Danger,
       ✂__→: KeyColors.Danger,
       ✂_←←: KeyColors.Danger,
@@ -508,7 +515,7 @@ if side == SplitSide.RIGHT:
     },
     default_color=Color(h=0, s=255, v=255),
     split_side=side,
-    split_offset=26,
+    split_offset=24,
   )
   keyboard.modules.append(rgbkeys)
 
@@ -516,29 +523,32 @@ keyboard.keymap = [[
   _TAB, __Q_, __W_, __E_, __R_, __T_,                   __Y_, __U_, __I_, __O_, __P_, QUOT,
   LSFT, __A_, __S_, __D_, __F_, __G_,                   __H_, __J_, __K_, __L_, SCLN, ENTR,
   LCTL, __Z_, __X_, __C_, __V_, __B_,                   __N_, __M_, COMA, PERD, SLSH, RSFT,
-              LALT, LCMD,                                           LCMD, LALT,
-                          BSP2, SP_1,                         SPC1,
-                             LSFT, LCMD,          RCLK,       _L2_,
-                                LSFT, LCTL,              LCLK
+                       LCTL, LALT, LCMD,             _🚫_, _🚫_, _🚫_,
+                       BSP2, SP_1, _L3_,             _🚫_, _🚫_, _🚫_,
 ], [
-  # ↓___, ESCP, __7_, __8_, __9_, LCBR,                   RCBR, VDSC, __↑_, _🚫_, PTSC, TICK,
-  # ↓___, __0_, __4_, __5_, __6_, LPRN,                   RPRN, __←_, EXLM, __→_, _🚫_, CENT,
-  ↓___, ESCP, __7_, __8_, __9_, →→→_,                   ←←←_, _←←_, __↑_, _↑↑_, _→→_, TICK,
-  ↓___, __0_, __4_, __5_, __6_, LPRN,                   RPRN, __←_, __↓_, _↓↓_, __→_, CENT,
-  ↓___, _🚫_, __1_, __2_, __3_, LBRC,                   RBRC, MINS, _EQL, UNDS, BSLS, ↓___,
-              ↓___, ↓___,                                           ↓___, ↓___,
-                          ✂__→, ENTR,                         EXLM,
-                             LSFT, ↓___,          ↓___,       EMOJ,
-                             LSFT, ↓___,                RSFT,
+  CTAB, ESCP, _🚫_, EMOJ, _🚫_, _🚫_,                   _URL, _↑↑_, __↑_, OPEN, _🚫_, APPN,
+  ↓___, _ALL, SAVE, RCLK, LCLK, ←←←_,                   _←←_, __←_, MSSN, __→_, _→→_, →→→_,
+  ↓___, UNDO, _🚫_, _🚫_, CCLK, _🚫_,                   _🚫_, _↓↓_, __↓_, _🚫_, _🚫_, _🚫_,
+                       _🚫_, _L4_, LNCH,             _🚫_, _🚫_, _🚫_,
+                       _🚫_, _🚫_, _🚫_,             _🚫_, _🚫_, _🚫_,
 ], [
-  # TODO selection and clipboard layer space+shift
-  CTAB, ESCP, CLOS, SKSL, RLOD, NTAB,                   MSSN, _URL, _🚫_, OPEN, PRNT, APPN,
-  ↓___, _ALL, SAVE, MTSL, FIND, LCLK,                   ✂←←←, ✂_←←, ✂__←, ✂__→, ✂_→→, ✂→→→,
-  ↓___, UNDO, _CUT, COPY, PAST, RCLK,                   NEW_, _🚫_, _🚫_, _🚫_, CMNT, ↓___,
-              ↓___, ↓___,                                           ↓___, ↓___,
-                          ✂_←←, ↓___,                         PGDN,
-                             LSFT, ↓___,          ↓___,       LNCH,
-                             LSFT, ↓___,                RSFT,
+  TTAB, ESCP, CLOS, _🚫_, RLOD, NTAB,                   _🚫_, _🚫_, _🚫_, _🚫_, PRNT, _🚫_,
+  ↓___, _🚫_, SAVE, MTSL, FIND, ✂←←←,                   ✂_←←, ✂__←, SKSL, ✂__→, ✂_→→, ✂→→→,
+  ↓___, UNDO, _CUT, COPY, PAST, _🚫_,                   NEW_, _🚫_, _🚫_, _🚫_, CMNT, ↓___,
+                       ✂_←←, ↓___, ↓___,             _🚫_, _🚫_, _🚫_,
+                       ↓___, LSFT, LSFT,             _🚫_, _🚫_, _🚫_,
+], [
+  _🚫_, _🚫_, __7_, __8_, __9_, LCBR,                   RCBR, _🚫_, _🚫_, _🚫_, _🚫_, TICK,
+  ↓___, __0_, __4_, __5_, __6_, LPRN,                   RPRN, _🚫_, EXLM, _🚫_, _🚫_, CENT,
+  _🚫_, _🚫_, __1_, __2_, __3_, LBRC,                   RBRC, MINS, _EQL, UNDS, BSLS, RSFT,
+                       ↓___, ↓___, ↓___,             _🚫_, _🚫_, _🚫_,
+                       _🚫_, _🚫_, ↓___,             _🚫_, _🚫_, _🚫_,
+], [
+  _🚫_, ↓___, _🚫_, _🚫_, _🚫_, _🚫_,                   _🚫_, S↑↑_, S_↑_, _🚫_, _🚫_, _🚫_,
+  ↓___, ↓___, ↓___, ↓___, ↓___, S←←←,                   S←←_, S_←_, _🚫_, S_→_, S→→_, S→→→,
+  _🚫_, UNDO, _CUT, COPY, PAST, _🚫_,                   _🚫_, S↓↓_, S_↓_, _🚫_, _🚫_, _🚫_,
+                       _🚫_, _🚫_, _🚫_,             _🚫_, _🚫_, _🚫_,
+                       _🚫_, ↓___, _🚫_,             _🚫_, _🚫_, _🚫_,
 ]]
 
 if __name__ == '__main__':
