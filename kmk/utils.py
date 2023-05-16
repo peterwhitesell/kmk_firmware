@@ -1,3 +1,8 @@
+try:
+    from typing import Optional
+except ImportError:
+    pass
+
 from supervisor import ticks_ms
 
 
@@ -17,10 +22,14 @@ class Debug:
     def __init__(self, name: str = __name__):
         self.name = name
 
-    def __call__(self, message: str, *args) -> None:
-        if self.name in Debug._disabled_names:
+    def __call__(self, *message: str, name: Optional[str] = None) -> None:
+        if not name:
+            name = self.name
+        if name in self._disabled_names:
             return
-        print(f'{ticks_ms()} {self.name}: {message}', *args)
+        print(ticks_ms(), end=' ')
+        print(name, end=': ')
+        print(*message, sep='')
 
     @property
     def enabled(self) -> bool:

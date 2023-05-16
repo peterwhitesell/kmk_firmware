@@ -35,7 +35,7 @@ else:
 
 keyboard = KMKKeyboard()
 keyboard.debug_enabled = True
-Debug.disable('kmk.kmk_keyboard', 'kmk.modules.split', 'kmk.modules.holdtap') #, 'kmk.hid')
+Debug.disable('kmk.keyboard', 'kmk.modules.split', 'kmk.modules.holdtap', 'kmk.hid')
 
 keyboard.modules.append(StickyMod())
 keyboard.modules.append(MouseKeys())

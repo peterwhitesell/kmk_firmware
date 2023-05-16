@@ -71,32 +71,22 @@ class RGBKeysKeyMeta:
     self.color = color
 
 class RGBKeys(Module):
-  split_offset=0
-  split_side=None
-  layers=None
-  coord_mapping=None
-  key_colors=None
-  last_top_layer=None
-  default_color=None
   def __init__(
     self,
-    split_offset=None,
+    split_offset=0,
     split_side=None,
     coord_mapping=None,
     key_colors=None,
     default_color=None,
   ):
-    if split_offset:
-      self.split_offset = split_offset
-    if split_side is not None:
-      self.split_side = split_side
-    if coord_mapping is not None:
-      self.coord_mapping = coord_mapping
-    if key_colors is not None:
-      self.key_colors = key_colors
+    self.split_offset = split_offset
+    self.split_side = split_side
+    self.coord_mapping = coord_mapping
+    self.key_colors = key_colors
     if default_color is None:
       default_color=Color(h=0, s=255, v=255, r=255, g=0, b=0)
     self.default_color=default_color
+    self.last_top_layer=None
     if not KC.get('RGB'):
       make_argumented_key(
         validator=RGBKeysKeyMeta,
@@ -119,11 +109,11 @@ class RGBKeys(Module):
   # required methods
   def during_bootup(self, keyboard):
     self.rgb = next(x for x in keyboard.extensions if type(x) is RGB)
-    try:
-      self.refresh_rgb(keyboard)
-    except Exception as e:
-      print(e)
-      traceback.print_exception(e)
+    # try:
+    #   self.refresh_rgb(keyboard)
+    # except Exception as e:
+    #   print(e)
+    #   traceback.print_exception(e)
     return
 
   def refresh_rgb(self, keyboard):
@@ -195,7 +185,13 @@ class RGBKeys(Module):
   #   self.rgb.set_hsv(hsv[0], hsv[1], hsv[2], i)
 
   def before_matrix_scan(self, keyboard):
-    return
+    if self.last_top_layer is None:
+      try:
+        self.refresh_rgb(keyboard)
+        return
+      except Exception as e:
+        print(e)
+        traceback.print_exception(e)
   def after_matrix_scan(self, keyboard):
     return
   def process_key(self, keyboard, key, is_pressed, int_coord):

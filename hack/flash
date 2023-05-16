@@ -25,4 +25,8 @@ for e in $RGB; do
     echo copying $e
     cp -X $e $KB_DRIVE/kmk/extensions
 done
+for f in $(ls $DIR/../kmk | grep ".py"); do
+    echo copying $f
+    cp -X $DIR/../kmk/$f $KB_DRIVE/kmk/
+done
 # cp -X $KB $KB_DRIVE/kmk

@@ -371,6 +371,7 @@ def maybe_make_firmware_key(candidate: str) -> Optional[Key]:
         ((('HID_SWITCH', 'HID'), handlers.hid_switch)),
         ((('RELOAD', 'RLD'), handlers.reload)),
         ((('RESET',), handlers.reset)),
+        ((('ANY',), handlers.any_pressed)),
     )
 
     for names, handler in keys:
@@ -476,7 +477,9 @@ class KeyAttrDict:
                 break
 
         if not maybe_key:
-            raise ValueError(f'Invalid key: {name}')
+            if debug.enabled:
+                debug(f'Invalid key: {name}')
+            return KC.NO
 
         if debug.enabled:
             debug(f'{name}: {maybe_key}')
