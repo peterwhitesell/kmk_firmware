@@ -529,14 +529,16 @@ class KMKKeyboard:
             try:
                 module.during_bootup(self)
             except Exception as err:
-                if debug.enabled:
-                    debug(f'Failed to load module {module}: {traceback.format_exc(err)}')
+                print(f'Failed to load module {module}:')
+                print(e)
+                traceback.print_exception(e)
         for ext in self.extensions:
             try:
                 ext.during_bootup(self)
             except Exception as err:
-                if debug.enabled:
-                    debug(f'Failed to load extensions {module}: {traceback.format_exc(err)}')
+                print(f'Failed to load extensions {module}:')
+                print(e)
+                traceback.print_exception(e)
 
         if debug.enabled:
             debug(f'init: {self}')

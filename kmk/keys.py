@@ -52,10 +52,10 @@ class Axis:
 
 
 class AX:
-    W = Axis(2)
-    P = Axis(3)
-    X = Axis(0)
-    Y = Axis(1)
+    W = Axis(2) # wheel
+    P = Axis(3) # pan
+    X = Axis(0) # move x
+    Y = Axis(1) # move y
 
 
 def maybe_make_key(
