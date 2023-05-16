@@ -48,7 +48,8 @@ class PMW3360(Module):
         self.invert_x = invert_x
         self.invert_y = invert_y
         self.flip_xy = flip_xy
-        self.scroll_control = False
+        self.v_scroll_enabled = False
+        self.h_scroll_enabled = False
         self.volume_control = False
         self.v_scroll_ctr = 0
         self.h_scroll_ctr = 0
@@ -58,7 +59,14 @@ class PMW3360(Module):
         debug(f'lift_config: {lift_config}')
 
     def start_v_scroll(self, enabled=True):
-        self.scroll_control = enabled
+        self.v_scroll_enabled = enabled
+
+    def start_h_scroll(self, enabled=True):
+        self.h_scroll_enabled = enabled
+    
+    def set_scroll(self, enabled=True):
+        self.v_scroll_enabled = enabled
+        self.h_scroll_enabled = enabled
 
     def start_volume_control(self, enabled=True):
         self.volume_control = enabled
@@ -209,7 +217,7 @@ class PMW3360(Module):
             if delta_x == 0 and delta_y == 0:
                 return
             # print('Delta: ', delta_x, ' ', delta_y)
-            if self.scroll_control:
+            if self.v_scroll_enabled:
                 # vertical scroll
                 self.v_scroll_ctr += delta_y
                 if self.v_scroll_ctr >= self.scroll_res:
@@ -218,6 +226,7 @@ class PMW3360(Module):
                 if self.v_scroll_ctr <= -self.scroll_res:
                     AX.W.move(keyboard, 1)
                     self.v_scroll_ctr = 0
+            if self.h_scroll_enabled:
                 # horizontal scroll
                 self.h_scroll_ctr += delta_x
                 if self.h_scroll_ctr >= self.scroll_res:
