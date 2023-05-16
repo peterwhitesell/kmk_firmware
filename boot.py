@@ -1,13 +1,13 @@
 # boot.py
 import usb_hid
 
-MOUSE_REPORT_DESCRIPTOR = bytes((
+POINTER_REPORT_DESCRIPTOR = bytes((
     0x05, 0x01,        # Usage Page (Generic Desktop Ctrls)
-    0x09, 0x02,        # Usage (Mouse)
+    0x09, 0x01,        # Usage (Pointer)
     0xA1, 0x01,        # Collection (Application)
     0x09, 0x01,        #   Usage (Pointer)
     0xA1, 0x00,        #   Collection (Physical)
-    0x85, 0x02,        #     10, 11 Report ID (2)
+    0x85, 0x05,        #     10, 11 Report ID (5)
     0x05, 0x09,        #     Usage Page (Button)
     0x19, 0x01,        #     Usage Minimum (0x01)
     0x29, 0x05,        #     Usage Maximum (0x05)
@@ -44,18 +44,18 @@ MOUSE_REPORT_DESCRIPTOR = bytes((
     0xC0,              # End Collection
 ))
 
-mouse = usb_hid.Device(
-    report_descriptor=MOUSE_REPORT_DESCRIPTOR,
+pointer = usb_hid.Device(
+    report_descriptor=POINTER_REPORT_DESCRIPTOR,
     usage_page=0x01,           # Generic Desktop Control
-    usage=0x02,                # Mouse
-    report_ids=(2,),           # Descriptor uses report ID 2.
-    in_report_lengths=(5,),    # This mouse sends 5 bytes in its report.
-    out_report_lengths=(0,),   # It does not receive any reports.
+    usage=0x01,                # Pointer
+    report_ids=(5,),           # Descriptor uses report ID 2
+    in_report_lengths=(5,),    # This pointer sends 5 bytes in its report
+    out_report_lengths=(0,),   # It does not receive any reports
 )
 
 usb_hid.enable(
     (usb_hid.Device.KEYBOARD,
-    #  usb_hid.Device.MOUSE,
+     usb_hid.Device.MOUSE,
      usb_hid.Device.CONSUMER_CONTROL,
-     mouse)
+     pointer)
 )

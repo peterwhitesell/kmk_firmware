@@ -29,6 +29,7 @@ class HIDModes:
 class HIDReportTypes:
     KEYBOARD = 1
     MOUSE = 2
+    POINTER = 5
     CONSUMER = 3
     SYSCONTROL = 4
 
@@ -36,18 +37,20 @@ class HIDReportTypes:
 class HIDUsage:
     KEYBOARD = 0x06
     MOUSE = 0x02
+    POINTER = 0x01
     CONSUMER = 0x01
     SYSCONTROL = 0x80
 
 
 class HIDUsagePage:
     CONSUMER = 0x0C
-    KEYBOARD = MOUSE = SYSCONTROL = 0x01
+    KEYBOARD = MOUSE = POINTER = SYSCONTROL = 0x01
 
 
 HID_REPORT_SIZES = {
     HIDReportTypes.KEYBOARD: 8,
-    HIDReportTypes.MOUSE: 5,
+    HIDReportTypes.MOUSE: 4,
+    HIDReportTypes.POINTER: 5,
     HIDReportTypes.CONSUMER: 2,
     HIDReportTypes.SYSCONTROL: 8,  # TODO find the correct value for this
 }
@@ -224,8 +227,10 @@ class AbstractHID:
     def move_axis(self, axis):
         delta = clamp(axis.delta, -127, 127)
         axis.delta -= delta
-        self._pd_report[axis.code + 2] = 0xFF & delta
-        self._pd_pending = True
+        # the built in mouse doesn't have a Pan (P) axis. only add Pan axis to report if using a custom Pointer Device Report with at least 5 bytes
+        if len(self._pd_report) > axis.code + 2:
+            self._pd_report[axis.code + 2] = 0xFF & delta
+            self._pd_pending = True
 
     def clear_axis(self):
         for idx in range(2, len(self._pd_report)):
@@ -241,6 +246,7 @@ class USBHID(AbstractHID):
         for device in usb_hid.devices:
             us = device.usage
             up = device.usage_page
+            print('init device:', up, us)
 
             if up == HIDUsagePage.CONSUMER and us == HIDUsage.CONSUMER:
                 self.devices[HIDReportTypes.CONSUMER] = device
@@ -252,6 +258,12 @@ class USBHID(AbstractHID):
 
             if up == HIDUsagePage.MOUSE and us == HIDUsage.MOUSE:
                 self.devices[HIDReportTypes.MOUSE] = device
+                continue
+
+            if up == HIDUsagePage.POINTER and us == HIDUsage.POINTER:
+                self.devices[HIDReportTypes.POINTER] = device
+                self._pd_report = bytearray(HID_REPORT_SIZES[HIDReportTypes.POINTER] + 1)
+                self._pd_report[0] = HIDReportTypes.POINTER
                 continue
 
             if up == HIDUsagePage.SYSCONTROL and us == HIDUsage.SYSCONTROL:
@@ -318,6 +330,12 @@ class BLEHID(AbstractHID):
 
             if up == HIDUsagePage.MOUSE and us == HIDUsage.MOUSE:
                 result[HIDReportTypes.MOUSE] = device
+                continue
+
+            if up == HIDUsagePage.POINTER and us == HIDUsage.POINTER:
+                self.devices[HIDReportTypes.POINTER] = device
+                self._pd_report = bytearray(HID_REPORT_SIZES[HIDReportTypes.POINTER] + 1)
+                self._pd_report[0] = HIDReportTypes.POINTER
                 continue
 
             if up == HIDUsagePage.SYSCONTROL and us == HIDUsage.SYSCONTROL:
