@@ -35,7 +35,7 @@ else:
 
 keyboard = KMKKeyboard()
 keyboard.debug_enabled = True
-Debug.disable('kmk.kmk_keyboard', 'kmk.modules.split', 'kmk.modules.holdtap', 'kmk.hid')
+Debug.disable('kmk.kmk_keyboard', 'kmk.modules.split', 'kmk.modules.holdtap') #, 'kmk.hid')
 
 keyboard.modules.append(StickyMod())
 keyboard.modules.append(MouseKeys())
@@ -317,11 +317,11 @@ if side == SplitSide.RIGHT:
   ml = MouseLayer(keyboard, [LCLK, RCLK])
 
 def ball_scroll_enable(key, keyboard, *args):
-    pmw3360.start_v_scroll()
+    pmw3360.set_scroll()
     return True
 
 def ball_scroll_disable(key, keyboard, *args):
-    pmw3360.start_v_scroll(False)
+    pmw3360.set_scroll(False)
     return True
 
 if side == SplitSide.RIGHT:
