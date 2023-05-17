@@ -521,9 +521,7 @@ keyboard.keymap = [[
                              LSFT, LCMD,          RCLK,       _L2_,
                                 LSFT, LCTL,              LCLK
 ], [
-  # ↓___, ESCP, __7_, __8_, __9_, LCBR,                   RCBR, VDSC, __↑_, _🚫_, PTSC, TICK,
-  # ↓___, __0_, __4_, __5_, __6_, LPRN,                   RPRN, __←_, EXLM, __→_, _🚫_, CENT,
-  ↓___, ESCP, __7_, __8_, __9_, →→→_,                   ←←←_, _←←_, __↑_, _↑↑_, _→→_, TICK,
+  TTAB, ESCP, __7_, __8_, __9_, →→→_,                   ←←←_, _←←_, __↑_, _↑↑_, _→→_, TICK,
   ↓___, __0_, __4_, __5_, __6_, LPRN,                   RPRN, __←_, __↓_, _↓↓_, __→_, CENT,
   ↓___, _🚫_, __1_, __2_, __3_, LBRC,                   RBRC, MINS, _EQL, UNDS, BSLS, ↓___,
               ↓___, ↓___,                                           ↓___, ↓___,
@@ -535,7 +533,8 @@ keyboard.keymap = [[
   CTAB, ESCP, CLOS, SKSL, RLOD, NTAB,                   MSSN, _URL, _🚫_, OPEN, PRNT, APPN,
   ↓___, _ALL, SAVE, MTSL, FIND, LCLK,                   ✂←←←, ✂_←←, ✂__←, ✂__→, ✂_→→, ✂→→→,
   ↓___, UNDO, _CUT, COPY, PAST, RCLK,                   NEW_, _🚫_, _🚫_, _🚫_, CMNT, ↓___,
-              ↓___, ↓___,                                           ↓___, ↓___,
+              ↓___, ↓___,                                    
+                            ↓___, ↓___,
                           ✂_←←, ↓___,                         PGDN,
                              LSFT, ↓___,          ↓___,       LNCH,
                              LSFT, ↓___,                RSFT,
