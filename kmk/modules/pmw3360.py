@@ -41,7 +41,7 @@ class PMW3360(Module):
     DIR_WRITE = 0x80
     DIR_READ = 0x7F
 
-    def __init__(self, cs, sclk, miso, mosi, invert_x=False, invert_y=False, flip_xy=False, lift_config=0x04, on_move=lambda keyboard: None):
+    def __init__(self, cs, sclk, miso, mosi, invert_x=False, invert_y=False, flip_xy=False, lift_config=0x04, on_move=lambda keyboard: None, scroll_layers=[], volume_layers=[]):
         self.cs = digitalio.DigitalInOut(cs)
         self.cs.direction = digitalio.Direction.OUTPUT
         self.spi = busio.SPI(clock=sclk, MOSI=mosi, MISO=miso)
@@ -56,6 +56,8 @@ class PMW3360(Module):
         self.scroll_res = 10
         self.on_move = on_move
         self.lift_config = lift_config
+        self.scroll_layers = scroll_layers
+        self.volume_layers = volume_layers
         debug(f'lift_config: {lift_config}')
 
     def start_v_scroll(self, enabled=True):
@@ -199,57 +201,66 @@ class PMW3360(Module):
 
     def after_hid_send(self, keyboard):
         motion = self.pmw3360_read_motion()
-        if motion[0] & 0x80:
-            if motion[0] & 0x07:
-                debug("Motion weirdness")
-                self.pmw3360_write(REG.Motion_Burst, 0)
-                return
-            if self.flip_xy:
-                delta_x = self.delta_to_int(motion[5], motion[4])
-                delta_y = self.delta_to_int(motion[3], motion[2])
-            else:
-                delta_x = self.delta_to_int(motion[3], motion[2])
-                delta_y = self.delta_to_int(motion[5], motion[4])
-            if self.invert_x:
-                delta_x *= -1
-            if self.invert_y:
-                delta_y *= -1
-            if delta_x == 0 and delta_y == 0:
-                return
-            # print('Delta: ', delta_x, ' ', delta_y)
+        if not motion[0] & 0x80:
+            return
+        if motion[0] & 0x07:
+            debug("Motion weirdness")
+            self.pmw3360_write(REG.Motion_Burst, 0)
+            return
+        if self.flip_xy:
+            delta_x = self.delta_to_int(motion[5], motion[4])
+            delta_y = self.delta_to_int(motion[3], motion[2])
+        else:
+            delta_x = self.delta_to_int(motion[3], motion[2])
+            delta_y = self.delta_to_int(motion[5], motion[4])
+        if self.invert_x:
+            delta_x *= -1
+        if self.invert_y:
+            delta_y *= -1
+        if delta_x == 0 and delta_y == 0:
+            return
+        if keyboard.active_layers[0] in self.scroll_layers:
+            self.v_scroll(keyboard, delta_y)
+            self.h_scroll(keyboard, delta_x)
+        elif self.v_scroll_enabled or self.h_scroll_enabled:
             if self.v_scroll_enabled:
-                # vertical scroll
-                self.v_scroll_ctr += delta_y
-                if self.v_scroll_ctr >= self.scroll_res:
-                    AX.W.move(keyboard, -1)
-                    self.v_scroll_ctr = 0
-                if self.v_scroll_ctr <= -self.scroll_res:
-                    AX.W.move(keyboard, 1)
-                    self.v_scroll_ctr = 0
+                self.v_scroll(keyboard, delta_y)
             if self.h_scroll_enabled:
-                # horizontal scroll
-                self.h_scroll_ctr += delta_x
-                if self.h_scroll_ctr >= self.scroll_res:
-                    AX.P.move(keyboard, 1)
-                    self.h_scroll_ctr = 0
-                if self.h_scroll_ctr <= -self.scroll_res:
-                    AX.P.move(keyboard, -1)
-                    self.h_scroll_ctr = 0
-            elif self.volume_control:
-                self.v_scroll_ctr += 1
-                if self.v_scroll_ctr >= self.scroll_res:
-                    if delta_y > 0:
-                        keyboard.tap_key(KC.VOLD)
-                    if delta_y < 0:
-                        keyboard.tap_key(KC.VOLU)
-                    self.v_scroll_ctr = 0
-            else:
-                if delta_x:
-                    AX.X.move(keyboard, self._scale_mouse_move(delta_x))
-                if delta_y:
-                    AX.Y.move(keyboard, self._scale_mouse_move(delta_y))
-                if self.on_move is not None:
-                    self.on_move(keyboard)
+                self.h_scroll(keyboard, delta_x)
+        elif self.volume_control or keyboard.active_layers[0] in self.volume_layers:
+            self.v_scroll_ctr += 1
+            if self.v_scroll_ctr < self.scroll_res:
+                return
+            if delta_y > 0:
+                keyboard.tap_key(KC.VOLD)
+            if delta_y < 0:
+                keyboard.tap_key(KC.VOLU)
+            self.v_scroll_ctr = 0
+        else:
+            if delta_x:
+                AX.X.move(keyboard, self._scale_mouse_move(delta_x))
+            if delta_y:
+                AX.Y.move(keyboard, self._scale_mouse_move(delta_y))
+            if self.on_move is not None:
+                self.on_move(keyboard)
+
+    def v_scroll(self, keyboard, delta):
+        self.v_scroll_ctr += delta
+        if self.v_scroll_ctr >= self.scroll_res:
+            AX.W.move(keyboard, -1)
+            self.v_scroll_ctr = 0
+        if self.v_scroll_ctr <= -self.scroll_res:
+            AX.W.move(keyboard, 1)
+            self.v_scroll_ctr = 0
+
+    def h_scroll(self, keyboard, delta):
+        self.h_scroll_ctr += delta
+        if self.h_scroll_ctr >= self.scroll_res:
+            AX.P.move(keyboard, 1)
+            self.h_scroll_ctr = 0
+        if self.h_scroll_ctr <= -self.scroll_res:
+            AX.P.move(keyboard, -1)
+            self.h_scroll_ctr = 0
 
     def on_powersave_enable(self, keyboard):
         return

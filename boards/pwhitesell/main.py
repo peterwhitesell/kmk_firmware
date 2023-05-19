@@ -87,7 +87,7 @@ keyboard.coord_mapping = [
 ]
 
 if side == SplitSide.RIGHT:
-  pmw3360 = PMW3360(cs=board.GP21, miso=board.GP20, mosi=board.GP23, sclk=board.GP22, invert_x=True, invert_y=True, flip_xy=True)
+  pmw3360 = PMW3360(cs=board.GP21, miso=board.GP20, mosi=board.GP23, sclk=board.GP22, invert_x=True, invert_y=True, flip_xy=True, scroll_layers=[1])
   keyboard.modules.append(pmw3360)
 
 split = Split(
@@ -315,18 +315,6 @@ class MouseLayer():
 
 if side == SplitSide.RIGHT:
   ml = MouseLayer(keyboard, [LCLK, RCLK])
-
-def ball_scroll_enable(key, keyboard, *args):
-    pmw3360.set_scroll()
-    return True
-
-def ball_scroll_disable(key, keyboard, *args):
-    pmw3360.set_scroll(False)
-    return True
-
-if side == SplitSide.RIGHT:
-  SP_1.before_press_handler(ball_scroll_enable)
-  SP_1.before_release_handler(ball_scroll_disable)
 
 rgb = RGB(
   animation_mode=AnimationModes.STATIC_STANDBY,
