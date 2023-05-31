@@ -1,14 +1,16 @@
 #!/bin/bash
 
 SIDE=$1
+KB_NAME=${KB_NAME:-KB}
+KB_MAIN=${KB_MAIN:-main}
 if [[ "$SIDE" != "L" ]] && [[ "$SIDE" != "R" ]]; then
     echo "Usage: hack/init L|R"
     exit 1
 fi
 
 DIR="$(dirname ${BASH_SOURCE[0]})"
-KB_DRIVE=/Volumes/KB_$SIDE
-MAIN_PY=$DIR/../boards/pwhitesell/main.py
+KB_DRIVE=/Volumes/${KB_NAME}_${SIDE}
+MAIN_PY=$DIR/../boards/pwhitesell/${KB_MAIN}.py
 RGB_KEYS=$DIR/../kmk/modules/rgbkeys.py
 PMW=$DIR/../kmk/modules/pmw3360.py
 CAPSWORD=$DIR/../kmk/modules/capsword.py
@@ -16,7 +18,20 @@ SPLIT=$DIR/../kmk/modules/split.py
 RGB=$DIR/../kmk/extensions/rgb.py
 KB=$DIR/../kmk/kmk_keyboard.py
 
-cp -X $MAIN_PY $KB_DRIVE
+echo SIDE     =     $SIDE
+echo KB_NAME  =     $KB_NAME
+echo DIR      =     $DIR
+echo KB_DRIVE =     $KB_DRIVE
+echo MAIN_PY  =     $MAIN_PY
+echo RGB_KEYS =     $RGB_KEYS
+echo PMW      =     $PMW
+echo CAPSWORD =     $CAPSWORD
+echo SPLIT    =     $SPLIT
+echo RGB      =     $RGB
+echo KB       =     $KB
+# exit 0
+
+cp -X $MAIN_PY $KB_DRIVE/code.py
 for m in $RGB_KEYS $PMW $SPLIT; do
     echo copying $m
     cp -X $m $KB_DRIVE/kmk/modules

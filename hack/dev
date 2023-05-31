@@ -1,0 +1,19 @@
+#!/bin/bash
+
+SIDE=$1
+if [[ "$SIDE" != "L" ]] && [[ "$SIDE" != "R" ]]; then
+  echo "Usage: hack/init L|R"
+  exit 1
+fi
+
+KB=$2
+
+if [[ "$KB" == "" ]]; then
+  KB=KB
+fi
+
+KB_MAIN=${KB_MAIN:-main}
+
+fswatch -o boards/pwhitesell \
+| xargs -n1 -I{} bash \
+  -c "echo copying ${KB_MAIN} to ${KB}_${SIDE} && cp boards/pwhitesell/${KB_MAIN}.py /Volumes/${KB}_${SIDE}/code.py && echo 'done'"
