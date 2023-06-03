@@ -130,9 +130,6 @@ _7__ = KC.N7
 _8__ = KC.N8
 _9__ = KC.N9
 _0__ = KC.N0
-_TAB = KC.TAB
-CTAB = KC.SM(KC.TAB, KC.LCMD)
-TTAB = KC.LCMD(KC.GRV)
 __A_ = KC.A
 __B_ = KC.B
 __C_ = KC.C
@@ -166,6 +163,9 @@ SCLN = KC.SCLN
 EXLM = KC.EXLM
 LSFT = KC.TD(KC.HT(KC.OS(KC.LSFT, tap_time=None), KC.LSFT), KC.CW)
 RSFT = KC.TD(KC.HT(KC.OS(KC.RSFT, tap_time=None), KC.RSFT), KC.CW)
+_TAB = KC.TAB
+CTAB = KC.SM(KC.TAB, KC.LCMD, [LSFT, RSFT])
+TTAB = KC.LCMD(KC.GRV)
 RCMD = KC.HT(KC.OS(KC.RCMD, tap_time=None), KC.RCMD)
 LCMD = KC.HT(KC.OS(KC.LCMD, tap_time=None), KC.LCMD)
 RALT = KC.HT(KC.OS(KC.RALT, tap_time=None), KC.RALT)
