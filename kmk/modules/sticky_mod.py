@@ -3,9 +3,10 @@ from kmk.modules import Module
 
 
 class StickyModMeta:
-    def __init__(self, kc, mod):
+    def __init__(self, kc, mod, ignore=[]):
         self.kc = kc
         self.mod = mod
+        self.ignore = ignore
 
 
 class StickyMod(Module):
@@ -27,7 +28,7 @@ class StickyMod(Module):
 
     def process_key(self, keyboard, key, is_pressed, int_coord):
         # release previous key if any other key is pressed
-        if self._active and self._active_key is not None:
+        if self._active and self._active_key is not None and key  not in self._active_key.meta.ignore:
             self.release_key(keyboard, self._active_key)
 
         return key

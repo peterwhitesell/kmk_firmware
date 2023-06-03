@@ -11,6 +11,7 @@ keyboard.keymap = [
     [
         KC.SM(kc=KC.TAB, mod=KC.LALT),
         KC.SM(KC.TAB, KC.LSFT(KC.LALT)),
+        KC.SM(kc=KC.TAB, mod=KC.LALT, ignore=[KC.LSFT, KC.RSFT]),
     ],
 ]
 ```
