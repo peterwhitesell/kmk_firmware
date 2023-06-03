@@ -40,15 +40,15 @@ keyboard.row_pins = (
 keyboard.modules.append(HoldTap())
 keyboard.modules.append(OneShot())
 keyboard.modules.append(MouseKeys())
-keyboard.extensions.append(RGB(
-  animation_mode=AnimationModes.STATIC_STANDBY,
-  pixel_pin=board.D11,
-  num_pixels=24,
-  hue_default=56,
-  sat_default=255,
-  val_default=100,
-  val_limit=255,
-))
+# keyboard.extensions.append(RGB(
+#   animation_mode=AnimationModes.STATIC_STANDBY,
+#   pixel_pin=board.D11,
+#   num_pixels=24,
+#   hue_default=56,
+#   sat_default=255,
+#   val_default=100,
+#   val_limit=255,
+# ))
 
 # import keys as k
 # keyboard.keymap = [[
