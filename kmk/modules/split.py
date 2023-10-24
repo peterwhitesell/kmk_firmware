@@ -376,7 +376,8 @@ class Split(Module):
     def send_msg(self, msg_type, msg):
         debug('sending msg --->', bytes([msg_type]), msg)
         msg = bytes([msg_type]) + bytes([len(msg)]) + msg + self._checksum(msg)
-        self._uart.write(msg)
+        if self._uart is not None:
+            self._uart.write(msg)
 
     def _receive_uart(self, keyboard):
         if (not self._uart) or self._uart.in_waiting == 0:

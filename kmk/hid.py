@@ -96,7 +96,7 @@ class AbstractHID:
         self._cc_report = bytearray(HID_REPORT_SIZES[HIDReportTypes.CONSUMER] + 1)
         self._cc_report[0] = HIDReportTypes.CONSUMER
         self._cc_pending = False
-        if self._pd_report is None:
+        if (not hasattr(self, '_pd_report')) or self._pd_report is None:
             self._pd_report = bytearray(HID_REPORT_SIZES[HIDReportTypes.MOUSE] + 1)
             self._pd_report[0] = HIDReportTypes.MOUSE
         self._pd_pending = False

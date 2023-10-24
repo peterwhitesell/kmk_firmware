@@ -87,13 +87,13 @@ class RGBKeys(Module):
       default_color=Color(h=0, s=255, v=255, r=255, g=0, b=0)
     self.default_color=default_color
     self.last_top_layer=None
-    if not KC.get('RGB'):
-      make_argumented_key(
-        validator=RGBKeysKeyMeta,
-        names=('RGB',),
-        on_press=self.rgb_pressed,
-        on_release=self.rgb_released,
-      )
+    # if not KC.get('RGB'):
+    #   make_argumented_key(
+    #     validator=RGBKeysKeyMeta,
+    #     names=('RGB',),
+    #     on_press=self.rgb_pressed,
+    #     on_release=self.rgb_released,
+    #   )
     self.animated_colors = {}
 
   def rgb_pressed(self, key, keyboard, *args, **kwargs):
@@ -209,7 +209,7 @@ class RGBKeys(Module):
     return
 
   def on_powersave_disable(self, keyboard):
-    self.refresh_rgb(keyboard)
+    # self.refresh_rgb(keyboard)
     return
 
   # def animate(self):

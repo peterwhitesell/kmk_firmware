@@ -298,6 +298,8 @@ class RGB(Extension):
         self._set_rgbs(rgbs)
     
     def send_split_msg(self, rgbs):
+        if self.split is None:
+            return
         msg = bytes([])
         for item in rgbs:
             rgb, index = item
@@ -335,22 +337,23 @@ class RGB(Extension):
                 pixels.show()
 
     def set_rgbs(self, rgbs):
+        debug('------setting rgbs', rgbs)
         this_side = []
         other_side = []
         for item in rgbs:
             rgb, index = item
             if self.split == None:
-                # print('-s---not split mode, so setting rgb normall')
+                debug('-s---not split mode, so setting rgb normall')
                 this_side.append(item)
                 continue
             if (self.split.split_side == SplitSide.RIGHT and self.split.split_target_left) or (self.split.split_side == SplitSide.LEFT and not self.split.split_target_left):
-                # print('-s--do nothing if not split side')
+                debug('-s--do nothing if not split side')
                 continue
             if index >= self.num_pixels:
-                # print('-s---index ', index, ' greater number of pixels, so sending to other side')
+                debug('-s---index ', index, ' greater number of pixels, so sending to other side')
                 other_side.append([rgb, index - self.num_pixels])
                 continue
-            # print('-s---index ', index, ' is in range, so setting it')
+            debug('-s---index ', index, ' is in range, so setting it')
             this_side.append(item)
         self._set_rgbs(this_side)
         self.send_split_msg(other_side)
