@@ -1,0 +1,11 @@
+#!/bin/bash
+
+SIDE=$1
+if [[ "$SIDE" != "L" ]] && [[ "$SIDE" != "R" ]]; then
+    echo "Usage: hack/init L|R"
+    exit 1
+fi
+
+DIR="$(dirname ${BASH_SOURCE[0]})"
+
+KB_MAIN=kba KB_NAME=KBA ${DIR}/flash $SIDE

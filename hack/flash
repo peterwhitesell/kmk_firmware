@@ -10,13 +10,13 @@ fi
 
 DIR="$(dirname ${BASH_SOURCE[0]})"
 KB_DRIVE=/Volumes/${KB_NAME}_${SIDE}
-MAIN_PY=$DIR/../boards/pwhitesell/${KB_MAIN}.py
-RGB_KEYS=$DIR/../kmk/modules/rgbkeys.py
-PMW=$DIR/../kmk/modules/pmw3360.py
-CAPSWORD=$DIR/../kmk/modules/capsword.py
-SPLIT=$DIR/../kmk/modules/split.py
-RGB=$DIR/../kmk/extensions/rgb.py
-KB=$DIR/../kmk/kmk_keyboard.py
+MAIN_PY=boards/pwhitesell/${KB_MAIN}.py
+RGB_KEYS=kmk/modules/rgbkeys.py
+PMW=kmk/modules/pmw3360.py
+CAPSWORD=kmk/modules/capsword.py
+SPLIT=kmk/modules/split.py
+RGB=kmk/extensions/rgb.py
+KB=kmk/kmk_keyboard.py
 
 echo SIDE     =     $SIDE
 echo KB_NAME  =     $KB_NAME
@@ -29,19 +29,28 @@ echo CAPSWORD =     $CAPSWORD
 echo SPLIT    =     $SPLIT
 echo RGB      =     $RGB
 echo KB       =     $KB
-# exit 0
 
-cp -X $MAIN_PY $KB_DRIVE/code.py
-for m in $RGB_KEYS $PMW $SPLIT; do
-    echo copying $m
-    cp -X $m $KB_DRIVE/kmk/modules
+function copy() {
+    from=$DIR/../$1
+    to=$KB_DRIVE/$2
+    echo "copying"
+    echo "  $from"
+    echo "  ==>"
+    echo "  $to"
+    echo "..."
+    cp -X $from $to
+}
+
+copy $MAIN_PY code.py
+# copy boards/pwhitesell/keys.py
+
+for m in $PMW; do
+    copy $m kmk/modules
 done
-for e in $RGB; do
-    echo copying $e
-    cp -X $e $KB_DRIVE/kmk/extensions
-done
-for f in $(ls $DIR/../kmk | grep ".py"); do
-    echo copying $f
-    cp -X $DIR/../kmk/$f $KB_DRIVE/kmk/
-done
+# for e in $RGB; do
+#     copy $e kmk/extensions
+# done
+# for f in $(ls $DIR/../kmk | grep ".py"); do
+#     copy kmk/$f kmk/
+# done
 # cp -X $KB $KB_DRIVE/kmk
