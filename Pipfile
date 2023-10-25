@@ -4,6 +4,8 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+circup = "*"
+mpy-cross = "*"
 
 [dev-packages]
 "flake8" = "==6.0.0"

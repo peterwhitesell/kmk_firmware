@@ -1,0 +1,7 @@
+#!/bin/bash
+
+circup --path /Volumes/KBA_R install adafruit_bus_device
+circup --path /Volumes/KBA_R install neopixel
+cp -X ../CircuitPython_PMW3360/pmw3360.py /Volumes/KBA_R/lib/
+cp -r -X ./kmk /Volumes/KBA_R/
+cp -X ./boards/pwhitesell/adjustable.py /Volumes/KBA_R/code.py
