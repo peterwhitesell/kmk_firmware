@@ -1,4 +1,4 @@
-from kmk.extensions.RGB import RGB, hsv_to_rgb
+from kmk.extensions.rgb import RGB, hsv_to_rgb
 from kmk.modules import Module
 from kmk.modules.split import SplitSide
 from kmk.keys import KC, make_argumented_key
@@ -108,12 +108,13 @@ class RGBKeys(Module):
 
   # required methods
   def during_bootup(self, keyboard):
+    print('----during bootup', type(keyboard.extensions[0]), type(keyboard.extensions[0]) is RGB)
     self.rgb = next(x for x in keyboard.extensions if type(x) is RGB)
-    # try:
-    #   self.refresh_rgb(keyboard)
-    # except Exception as e:
-    #   print(e)
-    #   traceback.print_exception(e)
+    try:
+      self.refresh_rgb(keyboard)
+    except Exception as e:
+      print(e)
+      traceback.print_exception(e)
     return
 
   def refresh_rgb(self, keyboard):
@@ -122,17 +123,20 @@ class RGBKeys(Module):
     self.animated_colors = {}
     self.last_top_layer = keyboard.active_layers[0]
     rgbs = []
+    print('---refresh_rgb',  keyboard.keymap)
     for i, _ in enumerate(keyboard.keymap[0]):
       rgb, rgb_i = self.get_key_rgb(i, keyboard)
       if rgb is None:
         continue
       rgbs.append([rgb, rgb_i])
+      print('---refreshing rgb', rgb, rgb_i)
     self.rgb.set_rgbs(rgbs)
 
   def refresh_key(self, i, keyboard):
     rgb, rgb_i = self.get_key_rgb(i, keyboard)
     if rgb is None:
       return
+    print('---refreshing key', rgb, rgb_i)
     self.rgb.set_rgb((rgb), rgb_i)
 
   def get_key_rgb(self, i, keyboard):

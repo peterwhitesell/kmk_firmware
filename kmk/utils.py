@@ -12,6 +12,7 @@ def clamp(x: int, bottom: int = 0, top: int = 100) -> int:
 
 _debug_enabled = False
 
+_disabled = {}
 
 class Debug:
     '''default usage:
@@ -24,6 +25,8 @@ class Debug:
     def __call__(self, *message: str, name: Optional[str] = None) -> None:
         if not name:
             name = self.name
+        if name in _disabled:
+            return
         print(ticks_ms(), end=' ')
         print(name, end=': ')
         print(*message, sep='')
@@ -37,3 +40,7 @@ class Debug:
     def enabled(self, enabled: bool):
         global _debug_enabled
         _debug_enabled = enabled
+    
+    @staticmethod
+    def disable(name):
+        _disabled[name] = True

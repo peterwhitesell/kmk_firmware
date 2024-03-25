@@ -1,7 +1,15 @@
 #!/bin/bash
+SIDE=${SIDE:-R}
+KB=${KB:-adjustable}
 
-circup --path /Volumes/KBA_R install adafruit_bus_device
-circup --path /Volumes/KBA_R install neopixel
-cp -X ../CircuitPython_PMW3360/pmw3360.py /Volumes/KBA_R/lib/
-cp -r -X ./kmk /Volumes/KBA_R/
-cp -X ./boards/pwhitesell/adjustable.py /Volumes/KBA_R/code.py
+# libs
+# circup --path /Volumes/KBA_$SIDE install adafruit_bus_device
+# circup --path /Volumes/KBA_$SIDE install neopixel
+# cp -X ../CircuitPython_PMW3360/pmw3360.py /Volumes/KBA_$SIDE/lib/
+
+# # kmk
+# cp -r -X ./kmk /Volumes/KBA_$SIDE/
+
+# # board
+# cp -X ./boards/pwhitesell/keys.py /Volumes/KBA_$SIDE/keys.py
+cp -X ./boards/pwhitesell/${KB}.py /Volumes/KBA_$SIDE/code.py

@@ -299,6 +299,21 @@ class RGB(Extension):
                     break
                 index -= len(pixels)
 
+    def set_rgbs(self, rgbs):
+        self.disable_auto_write = True
+        for item in rgbs:
+            rgb, index = item
+            # print('rgb, index: ', rgb, index)
+            if 0 <= index <= self.num_pixels - 1:
+                for pixels in self.pixels:
+                    if index <= (len(pixels) - 1):
+                        pixels[index] = rgb
+                        break
+                    index -= len(pixels)
+                if not self.disable_auto_write:
+                    pixels.show()
+        self.show()
+
     def set_rgb_fill(self, rgb):
         '''
         Takes an RGB or RGBW and displays it on all LEDs/Neopixels
